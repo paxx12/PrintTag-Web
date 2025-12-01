@@ -1,0 +1,680 @@
+// NFC Reading Module - Event-based continuous scanning
+const nfcReader = {
+    controller: null,
+    reader: null,
+
+    async start(onRead, onError) {
+        if (this.controller) return; // Already scanning
+
+        try {
+            this.controller = new AbortController();
+            this.reader = new NDEFReader();
+
+            await this.reader.scan({ signal: this.controller.signal });
+
+            this.reader.addEventListener('reading', ({ message, serialNumber }) => {
+                onRead(message, serialNumber);
+            });
+
+            this.reader.addEventListener('readingerror', () => {
+                onError('Error reading NFC tag');
+            });
+
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                onError(error.message);
+            }
+            this.controller = null;
+            this.reader = null;
+        }
+    },
+
+    stop() {
+        if (this.controller) {
+            this.controller.abort();
+            this.controller = null;
+            this.reader = null;
+        }
+    },
+
+    isScanning() {
+        return this.controller !== null;
+    }
+};
+
+// NFC Writing Module - Promise-based single write operation
+const nfcWriter = {
+    controller: null,
+
+    async write(records, onProgress) {
+        if (this.controller) {
+            throw new Error('Write operation already in progress');
+        }
+
+        const writer = new NDEFReader();
+        this.controller = new AbortController();
+
+        try {
+            if (onProgress) onProgress('reading');
+            if (onProgress) onProgress('writing');
+            await writer.write({ records, signal: this.controller.signal });
+            if (onProgress) onProgress('success');
+            this.controller = null;
+            return true;
+        } catch (error) {
+            this.controller = null;
+            if (onProgress) onProgress('error', error);
+            throw error;
+        }
+    },
+
+    cancel() {
+        if (this.controller) {
+            this.controller.abort();
+            this.controller = null;
+        }
+    },
+
+    isWriting() {
+        return this.controller !== null;
+    }
+};
+
+// Main Application
+const app = {
+    nfcSupported: false,
+    colors: [
+        '#FFFFFF', '#fff144', '#DCF478', '#0ACC38', '#057748', '#0d6284', '#0EE2A0', '#76D9F4',
+        '#46a8f9', '#2850E0', '#443089', '#A03CF7', '#F330F9', '#D4B1DD', '#f95d73', '#f72323',
+        '#7c4b00', '#f98c36', '#fcecd6', '#D3C5A3', '#AF7933', '#898989', '#BCBCBC', '#161616'
+    ],
+
+    temperaturePresets: {
+        'PLA': { minTemp: 190, maxTemp: 220, bedTempMin: 50, bedTempMax: 60 },
+        'PETG': { minTemp: 220, maxTemp: 250, bedTempMin: 70, bedTempMax: 80 },
+        'ABS': { minTemp: 230, maxTemp: 260, bedTempMin: 90, bedTempMax: 110 },
+        'ASA': { minTemp: 240, maxTemp: 270, bedTempMin: 90, bedTempMax: 110 },
+        'TPU': { minTemp: 210, maxTemp: 230, bedTempMin: 30, bedTempMax: 60 },
+        'PA': { minTemp: 240, maxTemp: 270, bedTempMin: 70, bedTempMax: 90 },
+        'PA12': { minTemp: 240, maxTemp: 270, bedTempMin: 70, bedTempMax: 90 },
+        'PC': { minTemp: 270, maxTemp: 310, bedTempMin: 100, bedTempMax: 120 },
+        'PEEK': { minTemp: 360, maxTemp: 400, bedTempMin: 120, bedTempMax: 150 },
+        'PVA': { minTemp: 190, maxTemp: 220, bedTempMin: 50, bedTempMax: 60 },
+        'HIPS': { minTemp: 230, maxTemp: 250, bedTempMin: 90, bedTempMax: 110 },
+        'PCTG': { minTemp: 220, maxTemp: 250, bedTempMin: 70, bedTempMax: 80 },
+        'PLA-CF': { minTemp: 190, maxTemp: 220, bedTempMin: 50, bedTempMax: 60 },
+        'PETG-CF': { minTemp: 230, maxTemp: 260, bedTempMin: 70, bedTempMax: 80 },
+        'PA-CF': { minTemp: 250, maxTemp: 280, bedTempMin: 70, bedTempMax: 90 }
+    },
+
+    init() {
+        this.checkNFC();
+        this.initColorPalette();
+        this.initEventListeners();
+        this.updateFormat();
+        // Initialize all four colors
+        for (let i = 1; i <= 4; i++) {
+            this.updateColor('#FFFFFF', i);
+        }
+        this.applyTemperaturePreset();
+        this.updateRecordSize();
+    },
+
+    async checkNFC() {
+        if ('NDEFReader' in window) {
+            try {
+                await navigator.permissions.query({ name: "nfc" });
+                this.nfcSupported = true;
+                this.updateNFCStatus(true, 'NFC is ready');
+            } catch {
+                this.nfcSupported = true;
+                this.updateNFCStatus(true, 'NFC available');
+            }
+            document.getElementById('scanBtn').disabled = false;
+            document.getElementById('writeBtn').disabled = false;
+        } else {
+            this.updateNFCStatus(false, 'NFC not supported on this device');
+        }
+    },
+
+    updateNFCStatus(ready, message) {
+        const indicator = document.getElementById('nfcIndicator');
+        const text = document.getElementById('nfcStatusText');
+        indicator.classList.toggle('ready', ready);
+        text.textContent = message;
+    },
+
+    setMode(mode) {
+        // Always stop scanning when changing modes
+        this.stopScanning();
+
+        // Hide all sections
+        document.getElementById('modeSelection').classList.add('hidden');
+        document.getElementById('readSection').classList.add('hidden');
+        document.getElementById('formSection').classList.add('hidden');
+
+        const formatSelect = document.getElementById('formatSelect');
+        const createModeHiddenOptions = formatSelect.querySelectorAll('.create-mode-hidden');
+
+        if (mode === 'menu') {
+            document.getElementById('modeSelection').classList.remove('hidden');
+        } else if (mode === 'read') {
+            document.getElementById('readSection').classList.remove('hidden');
+            this.clearReadData();
+            this.startScanning();
+        } else if (mode === 'update') {
+            document.getElementById('formSection').classList.remove('hidden');
+            document.getElementById('formTitle').textContent = 'Update Tag Data';
+            // Show all options in update mode
+            createModeHiddenOptions.forEach(option => option.style.display = '');
+        } else if (mode === 'create') {
+            document.getElementById('formSection').classList.remove('hidden');
+            document.getElementById('formTitle').textContent = 'Create New Tag';
+            // Hide options marked as create-mode-hidden
+            createModeHiddenOptions.forEach(option => option.style.display = 'none');
+            // Set format to openspool
+            formatSelect.value = 'openspool';
+            this.updateFormat();
+        }
+    },
+
+    clearReadData() {
+        document.getElementById('fileInput').value = '';
+        document.getElementById('decodedData').textContent = '';
+        document.getElementById('decodedDataContainer').classList.add('hidden');
+        this.showStatus('readStatus', '', '');
+    },
+
+    toggleScan() {
+        if (nfcReader.isScanning()) {
+            this.stopScanning();
+        } else {
+            this.startScanning();
+        }
+    },
+
+    startScanning() {
+        if (!this.nfcSupported) {
+            this.showStatus('readStatus', 'error', 'NFC not supported');
+            return;
+        }
+
+        this.showStatus('readStatus', 'warning', 'Hold device near NFC tag...');
+
+        nfcReader.start(
+            (message, serialNumber) => this.handleTagRead(message, serialNumber),
+            (errorMsg) => this.handleScanError(errorMsg)
+        );
+
+        document.getElementById('scanBtn').textContent = 'Stop Scanning';
+        document.getElementById('scanBtn').classList.remove('btn-success');
+        document.getElementById('scanBtn').classList.add('btn-secondary');
+    },
+
+    stopScanning() {
+        nfcReader.stop();
+        document.getElementById('scanBtn').textContent = 'Start Scanning';
+        document.getElementById('scanBtn').classList.remove('btn-secondary');
+        document.getElementById('scanBtn').classList.add('btn-success');
+        this.showStatus('readStatus', '', '');
+    },
+
+    handleScanError(errorMsg) {
+        this.stopScanning();
+        this.showStatus('readStatus', 'error', errorMsg);
+    },
+
+    handleTagRead(message, serialNumber) {
+        let output = `Serial: ${serialNumber}\n\n`;
+        let result = null;
+
+        for (const record of message.records) {
+            result = formats.parseNDEFRecord(record);
+            if (result) {
+                output += `Format: ${formats.getDisplayName(result.format)}\n`;
+                output += `Material: ${result.data.materialType}\n`;
+                output += `Brand: ${result.data.brand}\n`;
+                output += `Color: #${result.data.colorHex}\n`;
+                break;
+            }
+        }
+
+        if (result) {
+            this.showDecodedData(output);
+            this.populateForm(result.data, result.format);
+            this.showStatus('readStatus', 'success', 'Tag read successfully! Ready for next tag...');
+            this.showStatus('writeStatus', 'success', `Data loaded (${result.format})`);
+            // Switch to update mode - keeps scanning active
+            this.setMode('update');
+        } else {
+            this.showDecodedData(output + '\nNo valid data found');
+            this.showStatus('readStatus', 'warning', 'No recognized format found. Keep scanning...');
+        }
+    },
+
+    showDecodedData(text) {
+        document.getElementById('decodedData').textContent = text;
+        document.getElementById('decodedDataContainer').classList.remove('hidden');
+    },
+
+    initEventListeners() {
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            this.handleFileUpload(e.target.files[0]);
+        });
+
+        // Add event listeners for all four color inputs
+        for (let i = 1; i <= 4; i++) {
+            document.getElementById(`colorHex${i}`).addEventListener('input', (e) => {
+                this.updateColor('#' + e.target.value, i);
+                this.updateRecordSize();
+            });
+        }
+
+        document.getElementById('materialType').addEventListener('change', () => {
+            this.applyTemperaturePreset();
+        });
+
+        document.getElementById('showAdditionalColors').addEventListener('change', (e) => {
+            this.toggleAdditionalColors(e.target.checked);
+        });
+
+        document.getElementById('brandSelect').addEventListener('change', () => {
+            this.updateRecordSize();
+        });
+
+        document.getElementById('brandInput').addEventListener('input', () => {
+            this.updateRecordSize();
+        });
+
+        // Add listeners to all input fields to update record size
+        const inputFields = ['minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax',
+                            'materialName', 'gtin', 'materialAbbr', 'density',
+                            'diameter', 'preheatTemp', 'mfgDate', 'nominalWeight',
+                            'actualWeight', 'spoolWeight', 'countryCode'];
+
+        inputFields.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('input', () => this.updateRecordSize());
+            }
+        });
+
+        document.getElementById('matteFinish').addEventListener('change', () => {
+            this.updateRecordSize();
+        });
+    },
+
+    handleFileUpload(file) {
+        if (!file) return;
+
+        nfcReader.stop();
+
+        const format = formats.detectFormatFromFilename(file.name);
+        if (!format) {
+            this.showStatus('readStatus', 'error', 'Unsupported file type');
+            return;
+        }
+
+        let output = `File: ${file.name}\n\n`;
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            try {
+                const data = formats.parseData(format, e.target.result);
+                this.populateForm(data, format);
+                output += `Format: ${formats.getDisplayName(format)}\n`;
+                output += `Material: ${data.materialType}\n`;
+                this.showDecodedData(output);
+                this.transitionToForm(format);
+            } catch (err) {
+                this.showStatus('readStatus', 'error', `Invalid ${format} file`);
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    },
+
+    transitionToForm(format) {
+        this.showStatus('writeStatus', 'success', `File loaded (${format})`);
+        this.setMode('update');
+    },
+
+    populateForm(data, format) {
+        document.getElementById('formatSelect').value = format;
+        document.getElementById('materialType').value = data.materialType || 'PLA';
+
+        // Populate all four color fields
+        document.getElementById('colorHex1').value = data.colorHex || 'FFFFFF';
+        this.updateColor('#' + (data.colorHex || 'FFFFFF'), 1);
+
+        document.getElementById('colorHex2').value = data.colorHex2 || 'FFFFFF';
+        this.updateColor('#' + (data.colorHex2 || 'FFFFFF'), 2);
+
+        document.getElementById('colorHex3').value = data.colorHex3 || 'FFFFFF';
+        this.updateColor('#' + (data.colorHex3 || 'FFFFFF'), 3);
+
+        document.getElementById('colorHex4').value = data.colorHex4 || 'FFFFFF';
+        this.updateColor('#' + (data.colorHex4 || 'FFFFFF'), 4);
+
+        // Show additional colors if any are present
+        const hasAdditionalColors = (data.colorHex2 && data.colorHex2 !== 'FFFFFF') ||
+                                     (data.colorHex3 && data.colorHex3 !== 'FFFFFF') ||
+                                     (data.colorHex4 && data.colorHex4 !== 'FFFFFF');
+        if (hasAdditionalColors) {
+            document.getElementById('showAdditionalColors').checked = true;
+            this.toggleAdditionalColors(true);
+        }
+
+        const brandSelect = document.getElementById('brandSelect');
+        const brandInput = document.getElementById('brandInput');
+        const brandOption = Array.from(brandSelect.options).find(opt => opt.value === data.brand);
+
+        if (brandOption) {
+            brandSelect.value = data.brand;
+            brandInput.classList.add('hidden');
+        } else {
+            brandSelect.value = 'custom';
+            brandInput.value = data.brand || '';
+            brandInput.classList.remove('hidden');
+        }
+
+        document.getElementById('minTemp').value = data.minTemp || '';
+        document.getElementById('maxTemp').value = data.maxTemp || '';
+        document.getElementById('bedTempMin').value = data.bedTempMin || '';
+        document.getElementById('bedTempMax').value = data.bedTempMax || '';
+
+        // Advanced fields
+        document.getElementById('materialName').value = data.materialName || '';
+        document.getElementById('gtin').value = data.gtin || '';
+        document.getElementById('materialAbbr').value = data.materialAbbreviation || '';
+        document.getElementById('density').value = data.density || '';
+        document.getElementById('diameter').value = data.filamentDiameter || '1.75';
+        document.getElementById('preheatTemp').value = data.preheatTemp || '';
+        document.getElementById('mfgDate').value = data.manufacturedDate || '';
+        document.getElementById('nominalWeight').value = data.nominalWeight || '';
+        document.getElementById('actualWeight').value = data.actualWeight || '';
+        document.getElementById('spoolWeight').value = data.emptySpoolWeight || '';
+        document.getElementById('countryCode').value = data.countryOfOrigin || '';
+        document.getElementById('matteFinish').checked = data.matteFinish || false;
+        document.getElementById('silkFinish').checked = data.silkFinish || false;
+        document.getElementById('translucent').checked = data.translucent || false;
+        document.getElementById('transparent').checked = data.transparent || false;
+        document.getElementById('glitter').checked = data.glitter || false;
+        document.getElementById('gradualColorChange').checked = data.gradualColorChange || false;
+        document.getElementById('coextruded').checked = data.coextruded || false;
+
+        this.updateFormat();
+        this.updateRecordSize();
+    },
+
+    getFormData() {
+        const brandSelect = document.getElementById('brandSelect');
+        const brandInput = document.getElementById('brandInput');
+        const brand = brandSelect.value === 'custom' ? brandInput.value : brandSelect.value;
+
+        const data = {
+            materialType: document.getElementById('materialType').value,
+            colorHex: document.getElementById('colorHex1').value.replace('#', ''),
+            colorHex2: document.getElementById('colorHex2').value.replace('#', ''),
+            colorHex3: document.getElementById('colorHex3').value.replace('#', ''),
+            colorHex4: document.getElementById('colorHex4').value.replace('#', ''),
+            brand: brand || 'Generic',
+            minTemp: document.getElementById('minTemp').value,
+            maxTemp: document.getElementById('maxTemp').value,
+            bedTempMin: document.getElementById('bedTempMin').value,
+            bedTempMax: document.getElementById('bedTempMax').value
+        };
+
+        if (document.getElementById('formatSelect').value === 'openprinttag') {
+            const advanced = {
+                materialName: document.getElementById('materialName').value,
+                gtin: document.getElementById('gtin').value,
+                materialAbbreviation: document.getElementById('materialAbbr').value,
+                density: document.getElementById('density').value,
+                filamentDiameter: document.getElementById('diameter').value,
+                preheatTemp: document.getElementById('preheatTemp').value,
+                manufacturedDate: document.getElementById('mfgDate').value,
+                nominalWeight: document.getElementById('nominalWeight').value,
+                actualWeight: document.getElementById('actualWeight').value,
+                emptySpoolWeight: document.getElementById('spoolWeight').value,
+                countryOfOrigin: document.getElementById('countryCode').value,
+                matteFinish: document.getElementById('matteFinish').checked,
+                silkFinish: document.getElementById('silkFinish').checked,
+                translucent: document.getElementById('translucent').checked,
+                transparent: document.getElementById('transparent').checked,
+                glitter: document.getElementById('glitter').checked,
+                gradualColorChange: document.getElementById('gradualColorChange').checked,
+                coextruded: document.getElementById('coextruded').checked
+            };
+
+            Object.entries(advanced).forEach(([key, value]) => {
+                if (value) data[key] = value;
+            });
+        }
+
+        return data;
+    },
+
+    downloadFile() {
+        const format = document.getElementById('formatSelect').value;
+        const formData = this.getFormData();
+
+        const data = formats.generateData(format, formData);
+        formats.download(format, data);
+
+        this.showStatus('writeStatus', 'success', `${formats.getDisplayName(format)} file downloaded`);
+    },
+
+    handleWriteProgress(writeBtn, originalText, format) {
+        return (status, error) => {
+            writeBtn.disabled = false;
+            if (status === 'reading') {
+                writeBtn.textContent = '❌ Cancel';
+                writeBtn.classList.remove('btn-success');
+                writeBtn.classList.add('btn-secondary');
+                this.showStatus('writeStatus', 'warning', 'Hold device near NFC tag...');
+            } else if (status === 'writing') {
+                writeBtn.disabled = true;
+                writeBtn.textContent = '⏳ Writing...';
+                this.showStatus('writeStatus', 'warning', 'Writing to tag...');
+            } else if (status === 'success') {
+                writeBtn.textContent = originalText;
+                writeBtn.classList.remove('btn-secondary');
+                writeBtn.classList.add('btn-success');
+                this.showStatus('writeStatus', 'success', `Tag written successfully (${format})`);
+            } else if (status === 'error') {
+                writeBtn.textContent = originalText;
+                writeBtn.classList.remove('btn-secondary');
+                writeBtn.classList.add('btn-success');
+
+                const errorMsg = error.name === 'NotAllowedError' ? 'NFC permission denied' :
+                               error.name === 'AbortError' ? 'Write cancelled' :
+                               error.message;
+                this.showStatus('writeStatus', 'error', errorMsg);
+            }
+        };
+    },
+
+    toggleWrite() {
+        if (nfcWriter.isWriting()) {
+            this.cancelWrite();
+        } else {
+            this.writeNFC();
+        }
+    },
+
+    cancelWrite() {
+        nfcWriter.cancel();
+        const writeBtn = document.getElementById('writeBtn');
+        writeBtn.textContent = '📝 Write to NFC';
+        writeBtn.classList.remove('btn-secondary');
+        writeBtn.classList.add('btn-success');
+        this.showStatus('writeStatus', '', '');
+    },
+
+    async writeNFC() {
+        if (!this.nfcSupported) {
+            this.showStatus('writeStatus', 'error', 'NFC not supported');
+            return;
+        }
+
+        const writeBtn = document.getElementById('writeBtn');
+        const originalText = writeBtn.textContent;
+        const format = document.getElementById('formatSelect').value;
+        const formData = this.getFormData();
+
+        // Generate data and create NDEF records
+        const data = formats.generateData(format, formData);
+        const records = formats.createNDEFRecord(format, data);
+
+        // Write using nfcWriter module with progress callback
+        try {
+            await nfcWriter.write(records, this.handleWriteProgress(writeBtn, originalText, format));
+        } catch (error) {
+            // Fallback error handling (shouldn't reach here normally)
+            writeBtn.textContent = originalText;
+            writeBtn.classList.remove('btn-secondary');
+            writeBtn.classList.add('btn-success');
+            this.showStatus('writeStatus', 'error', error.message);
+        }
+    },
+
+    updateFormat() {
+        const format = document.getElementById('formatSelect').value;
+        const advanced = document.getElementById('advancedSection');
+        advanced.classList.toggle('hidden', format === 'openspool');
+        this.updateRecordSize();
+    },
+
+    updateBrand() {
+        const select = document.getElementById('brandSelect');
+        const input = document.getElementById('brandInput');
+        input.classList.toggle('hidden', select.value !== 'custom');
+        if (select.value === 'custom') input.focus();
+    },
+
+    applyTemperaturePreset() {
+        const materialType = document.getElementById('materialType').value;
+        const preset = this.temperaturePresets[materialType];
+
+        if (preset) {
+            document.getElementById('minTemp').value = preset.minTemp;
+            document.getElementById('maxTemp').value = preset.maxTemp;
+            document.getElementById('bedTempMin').value = preset.bedTempMin;
+            document.getElementById('bedTempMax').value = preset.bedTempMax;
+        }
+        this.updateRecordSize();
+    },
+
+    updateRecordSize() {
+        try {
+            const format = document.getElementById('formatSelect').value;
+            const formData = this.getFormData();
+            const size = formats.calculateRecordSize(format, formData);
+
+            // Update color based on tag capacity
+            // NTAG213: 144 bytes, NTAG215: 504 bytes, NTAG216: 888 bytes
+            const sizeInfo = document.getElementById('recordSizeInfo');
+            let tagType = '';
+            let colorStyle = '';
+
+            if (size > 888) {
+                // Too large for any tag
+                colorStyle = 'rgba(244, 67, 54, 0.2)';
+                sizeInfo.style.borderColor = 'var(--error)';
+                tagType = 'Too large for any supported tag';
+            } else if (size > 504) {
+                // Requires NTAG216
+                colorStyle = 'rgba(255, 152, 0, 0.2)';
+                sizeInfo.style.borderColor = 'var(--warning)';
+                tagType = 'NTAG216 required';
+            } else if (size > 144) {
+                // Requires NTAG215 or 216
+                colorStyle = 'rgba(76, 175, 80, 0.1)';
+                sizeInfo.style.borderColor = 'var(--success)';
+                tagType = 'NTAG215/216';
+            } else {
+                // Fits on any tag
+                colorStyle = 'rgba(76, 175, 80, 0.1)';
+                sizeInfo.style.borderColor = 'var(--success)';
+                tagType = 'NTAG213/215/216';
+            }
+
+            sizeInfo.style.background = colorStyle;
+            document.getElementById('recordSize').textContent = `${size} bytes (${tagType})`;
+        } catch (e) {
+            // Silently fail if form is incomplete
+        }
+    },
+
+    toggleAdvanced() {
+        const collapsible = document.querySelector('.collapsible');
+        const content = document.querySelector('.collapsible-content');
+        collapsible.classList.toggle('collapsed');
+        content.classList.toggle('collapsed');
+    },
+
+    initColorPalette() {
+        // Initialize four color palettes
+        for (let i = 1; i <= 4; i++) {
+            const palette = document.getElementById(`colorPalette${i}`);
+            const input = document.getElementById(`colorHex${i}`);
+
+            this.colors.forEach(color => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.title = color;
+                swatch.dataset.paletteId = i;
+                swatch.onclick = () => {
+                    input.value = color.replace('#', '').toUpperCase();
+                    this.updateColor(color, i);
+                };
+                palette.appendChild(swatch);
+            });
+        }
+    },
+
+    updateColor(color, paletteId) {
+        // Update swatches for specific palette
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            const swatchColor = this.rgbToHex(swatch.style.backgroundColor);
+            const swatchPaletteId = parseInt(swatch.dataset.paletteId);
+
+            if (swatchPaletteId === paletteId) {
+                swatch.classList.toggle('selected', swatchColor.toLowerCase() === color.toLowerCase());
+            }
+        });
+
+        // Update color preview for specific palette
+        const preview = document.getElementById(`colorPreview${paletteId}`);
+        if (preview) {
+            preview.style.background = color;
+        }
+    },
+
+    rgbToHex(rgb) {
+        const result = rgb.match(/\d+/g);
+        if (!result) return rgb;
+        return '#' + result.slice(0, 3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('');
+    },
+
+    toggleAdditionalColors(show) {
+        const additionalColorFields = document.querySelectorAll('.additional-colors');
+        additionalColorFields.forEach(field => {
+            field.style.display = show ? 'block' : 'none';
+        });
+    },
+
+    showStatus(id, type, message) {
+        const element = document.getElementById(id);
+        element.className = `status-message ${type ? 'show ' + type : ''}`;
+        element.textContent = message;
+        if (type === 'success') {
+            setTimeout(() => element.classList.remove('show'), 5000);
+        }
+    }
+};
+
+// Initialize app
+app.init();
