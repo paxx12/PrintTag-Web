@@ -79,8 +79,8 @@ const formats = {
 
     calculateRecordSize(format, formData) {
         try {
-            const data = this.generateData(this.route(format), formData);
-            const records = this.createNDEFRecord(this.route(format), data);
+            const data = this.generateData(format, formData);
+            const records = this.createNDEFRecord(format, data);
 
             let totalSize = 0;
             for (const record of records) {
