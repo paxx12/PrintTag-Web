@@ -83,7 +83,8 @@ const nfcWriter = {
 // Main Application
 const app = {
     nfcSupported: false,
-    temperaturePresets: {
+
+    materialPresets: {
         'PLA': { minTemp: 190, maxTemp: 220, bedTempMin: 50, bedTempMax: 60 },
         'PETG': { minTemp: 220, maxTemp: 250, bedTempMin: 70, bedTempMax: 80 },
         'ABS': { minTemp: 230, maxTemp: 260, bedTempMin: 90, bedTempMax: 110 },
@@ -101,11 +102,36 @@ const app = {
         'PA-CF': { minTemp: 250, maxTemp: 280, bedTempMin: 70, bedTempMax: 90 }
     },
 
+    palettes: {
+        material: {
+            paletteId: 'materialPalette',
+            inputId: 'materialType',
+            items: () => Object.keys(app.materialPresets),
+            defaultValue: 'PLA',
+            onSelect() { app.applyTemperaturePreset(); app.updateVisibility(); },
+        },
+        brand: {
+            paletteId: 'brandPalette',
+            inputId: 'brandValue',
+            items: ['Generic', 'Bambu Lab', 'Hatchbox', 'eSun', 'Overture', 'SUNLU', 'Polymaker', 'Prusament', 'Snapmaker', 'Jayo'],
+            defaultValue: 'Generic',
+            customInputId: 'brandInput',
+        },
+        variant: {
+            paletteId: 'variantPalette',
+            inputId: 'extendedSubType',
+            items: ['Basic', 'Matte', 'SnapSpeed', 'Silk', 'Support', 'HF', '95A', '95A HF'],
+            defaultValue: 'Basic',
+        },
+    },
+
     init() {
         this.checkNFC();
+        // Removed preset swatch palette; using canvas pickers only
         if (typeof ColorPicker !== 'undefined' && ColorPicker && typeof ColorPicker.init === 'function') {
             ColorPicker.init(this);
         }
+        for (const name in this.palettes) this.initPalette(name);
         this.populateFormats();
         this.initEventListeners();
         this.updateFormat();
@@ -293,11 +319,8 @@ const app = {
             this.toggleAdditionalColors(e.target.checked);
         });
 
-        document.getElementById('brandSelect').addEventListener('change', () => {
-            this.updateRecordSize();
-        });
-
         document.getElementById('brandInput').addEventListener('input', () => {
+            document.getElementById('brandValue').value = document.getElementById('brandInput').value || '';
             this.updateRecordSize();
         });
 
@@ -357,7 +380,7 @@ const app = {
 
     populateForm(data, format) {
         document.getElementById('formatSelect').value = data.format || format;
-        document.getElementById('materialType').value = data.materialType || 'PLA';
+        this.setPaletteValue('material', data.materialType || 'PLA');
 
         // Populate all four color fields
         document.getElementById('colorHex1').value = data.colorHex || 'FFFFFF';
@@ -381,17 +404,13 @@ const app = {
             this.toggleAdditionalColors(true);
         }
 
-        const brandSelect = document.getElementById('brandSelect');
-        const brandInput = document.getElementById('brandInput');
-        const brandOption = Array.from(brandSelect.options).find(opt => opt.value === data.brand);
-
-        if (brandOption) {
-            brandSelect.value = data.brand;
-            brandInput.classList.add('hidden');
+        if (data.brand && this.palettes.brand.items.includes(data.brand)) {
+            this.setPaletteValue('brand', data.brand);
+        } else if (data.brand) {
+            document.getElementById('brandInput').value = data.brand;
+            this.setPaletteValue('brand', 'custom');
         } else {
-            brandSelect.value = 'custom';
-            brandInput.value = data.brand || '';
-            brandInput.classList.remove('hidden');
+            this.setPaletteValue('brand', 'Generic');
         }
 
         document.getElementById('minTemp').value = data.minTemp || '';
@@ -400,6 +419,7 @@ const app = {
         document.getElementById('bedTempMax').value = data.bedTempMax || '';
         document.getElementById('spoolmanId').value = data.spoolmanId || '';
         document.getElementById('lotNr').value = data.lotNr || '';
+        this.setPaletteValue('variant', data.extendedSubType || 'Basic');
 
         // Advanced fields
         document.getElementById('materialName').value = data.materialName || '';
@@ -427,9 +447,9 @@ const app = {
     },
 
     getFormData() {
-        const brandSelect = document.getElementById('brandSelect');
+        const brandHidden = document.getElementById('brandValue');
         const brandInput = document.getElementById('brandInput');
-        const brand = brandSelect.value === 'custom' ? brandInput.value : brandSelect.value;
+        const brand = brandHidden.value || brandInput.value || 'Generic';
 
         const data = {
             format: document.getElementById('formatSelect').value,
@@ -449,6 +469,7 @@ const app = {
             bedTempMax: document.getElementById('bedTempMax').value,
             spoolmanId: document.getElementById('spoolmanId').value,
             lotNr: document.getElementById('lotNr').value,
+            extendedSubType: document.getElementById('extendedSubType').value,
 
             // Advanced
             materialName: document.getElementById('materialName').value,
@@ -603,16 +624,9 @@ const app = {
         }
     },
 
-    updateBrand() {
-        const select = document.getElementById('brandSelect');
-        const input = document.getElementById('brandInput');
-        input.classList.toggle('hidden', select.value !== 'custom');
-        if (select.value === 'custom') input.focus();
-    },
-
     applyTemperaturePreset() {
         const materialType = document.getElementById('materialType').value;
-        const preset = this.temperaturePresets[materialType];
+        const preset = this.materialPresets[materialType];
 
         if (preset) {
             document.getElementById('minTemp').value = preset.minTemp;
@@ -669,6 +683,68 @@ const app = {
         const content = document.querySelector('.collapsible-content');
         collapsible.classList.toggle('collapsed');
         content.classList.toggle('collapsed');
+    },
+
+    // Color swatch palette removed in favor of canvas picker
+
+    initPalette(name) {
+        const config = this.palettes[name];
+        const palette = document.getElementById(config.paletteId);
+        if (!palette) return;
+        palette.innerHTML = '';
+        const items = typeof config.items === 'function' ? config.items() : config.items;
+        const select = (val) => this.setPaletteValue(name, val);
+        items.forEach(item => {
+            palette.appendChild(this._createSwatch(item, item, select));
+        });
+        if (config.customInputId) {
+            palette.appendChild(this._createSwatch('Custom', 'custom', select));
+        }
+        select(document.getElementById(config.inputId).value || config.defaultValue);
+    },
+
+    _createSwatch(label, value, onSelect) {
+        const box = document.createElement('div');
+        box.className = 'material-swatch';
+        box.textContent = label;
+        box.dataset.value = value;
+        box.setAttribute('role', 'button');
+        box.setAttribute('tabindex', '0');
+        box.title = `Select ${label}`;
+        box.onclick = () => onSelect(value);
+        box.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect(value);
+            }
+        };
+        return box;
+    },
+
+    setPaletteValue(name, value) {
+        const config = this.palettes[name];
+        const input = document.getElementById(config.inputId);
+        const isCustom = config.customInputId && value === 'custom';
+        if (config.customInputId) {
+            const customInput = document.getElementById(config.customInputId);
+            if (isCustom) {
+                customInput.classList.remove('hidden');
+                customInput.focus();
+                input.value = customInput.value || '';
+            } else {
+                input.value = value;
+                customInput.classList.add('hidden');
+            }
+        } else {
+            input.value = value;
+        }
+        document.querySelectorAll(`#${config.paletteId} .material-swatch`).forEach(el => {
+            const isSelected = isCustom ? el.dataset.value === 'custom' : el.dataset.value === value;
+            el.classList.toggle('selected', isSelected);
+            el.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+        });
+        if (config.onSelect) config.onSelect(value);
+        this.updateRecordSize();
     },
 
     updateColor(color, paletteId) {

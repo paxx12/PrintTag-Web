@@ -244,6 +244,66 @@
             letter-spacing: 0.02em;
         }
 
+        .material-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .material-swatch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.45rem 0.5rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            line-height: 1.2;
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+
+        .material-swatch:hover { background: #4d4d4d; }
+        .material-swatch.selected {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(255, 107, 53, 0.6);
+        }
+
+        /* Tighter material selector on mobile */
+        @media (max-width: 640px) {
+            .material-palette {
+                grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+                gap: 0.25rem;
+            }
+            .material-swatch {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.78rem;
+                border-radius: 3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        /* Ultra-compact on very small screens */
+        @media (max-width: 360px) {
+            .material-palette {
+                grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+                gap: 0.2rem;
+            }
+            .material-swatch {
+                padding: 0.25rem 0.35rem;
+                font-size: 0.72rem;
+            }
+        }
+
         .color-swatch {
             width: 100%;
             height: 35px;
@@ -410,26 +470,26 @@
                 </small>
             </div>
 
+            <div class="form-group">
+                <label>Brand Name</label>
+                <div class="material-palette" id="brandPalette"></div>
+                <input type="hidden" id="brandValue" value="Generic">
+                <input type="text" id="brandInput" placeholder="Enter custom brand" class="hidden" style="margin-top: 0.5rem;">
+            </div>
 
             <div class="form-group">
                 <label>Material Type</label>
-                <select id="materialType">
-                    <option value="PLA">PLA</option>
-                    <option value="PETG">PETG</option>
-                    <option value="ABS">ABS</option>
-                    <option value="ASA">ASA</option>
-                    <option value="TPU">TPU</option>
-                    <option value="PA">PA (Nylon)</option>
-                    <option value="PA12">PA12</option>
-                    <option value="PC">PC (Polycarbonate)</option>
-                    <option value="PEEK">PEEK</option>
-                    <option value="PVA">PVA</option>
-                    <option value="HIPS">HIPS</option>
-                    <option value="PCTG">PCTG</option>
-                    <option value="PLA-CF">PLA-CF</option>
-                    <option value="PETG-CF">PETG-CF</option>
-                    <option value="PA-CF">PA-CF</option>
-                </select>
+                <div class="material-palette" id="materialPalette"></div>
+                <input type="hidden" id="materialType" value="PLA">
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                    Tap to select material
+                </small>
+            </div>
+
+            <div class="form-group" data-field="extendedSubType">
+                <label>Material Variant</label>
+                <div class="material-palette" id="variantPalette"></div>
+                <input type="hidden" id="extendedSubType" value="Basic">
             </div>
 
             <div class="form-group">
@@ -445,24 +505,6 @@
                     <canvas id="colorSV1" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
                 </div>
                 <canvas id="colorHue1" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
-            </div>
-
-            <div class="form-group">
-                <label>Brand Name</label>
-                <select id="brandSelect" onchange="app.updateBrand()">
-                    <option value="Generic" selected>Generic</option>
-                    <option value="Bambu Lab">Bambu Lab</option>
-                    <option value="Hatchbox">Hatchbox</option>
-                    <option value="eSun">eSun</option>
-                    <option value="Overture">Overture</option>
-                    <option value="SUNLU">SUNLU</option>
-                    <option value="Polymaker">Polymaker</option>
-                    <option value="Prusament">Prusament</option>
-                    <option value="Snapmaker">Snapmaker</option>
-                    <option value="Jayo">Jayo</option>
-                    <option value="custom">Custom (type below)</option>
-                </select>
-                <input type="text" id="brandInput" placeholder="Enter custom brand" class="hidden" style="margin-top: 0.5rem;">
             </div>
 
             <div class="form-row">
