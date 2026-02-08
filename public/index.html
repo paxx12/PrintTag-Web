@@ -19,6 +19,71 @@
             --warning: #ff9800;
         }
 
+        /* Floating tooltip-like write button */
+        .floating-tip {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            border: 1px solid var(--accent-hover);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,107,53,0.35);
+            width: auto !important;
+            margin: 0; /* override global button margin */
+            animation: tip-pulse 2s ease-out infinite;
+        }
+
+        .floating-tip:hover { background: var(--accent-hover); }
+        .floating-tip:active { transform: translateY(1px); }
+
+        @keyframes tip-pulse {
+            0%   { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,107,53,0.35); }
+            70%  { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 14px rgba(255,107,53,0); }
+            100% { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,107,53,0); }
+        }
+
+        /* Show floating tip only on mobile */
+        @media (min-width: 641px) {
+            .floating-tip { display: none !important; }
+        }
+
+        /* Mobile toast notification */
+        .mobile-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(45,45,45,0.95);
+            color: #fff;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+            display: none;
+            max-width: 90%;
+            text-align: center;
+        }
+        .mobile-toast.show { display: block; }
+        .mobile-toast.success { background: rgba(76,175,80,0.95); border-color: rgba(76,175,80,0.8); }
+        .mobile-toast.error { background: rgba(244,67,54,0.95); border-color: rgba(244,67,54,0.8); }
+
+        /* Show toast only on mobile */
+        @media (min-width: 641px) {
+            .mobile-toast { display: none !important; }
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -732,6 +797,14 @@
             <button class="btn-secondary" onclick="app.setMode('menu')">← Back to Menu</button>
         </div>
     </div>
+
+    <!-- Floating tooltip-like Write action (visible in create/update modes) -->
+    <button id="floatingWriteBtn" class="floating-tip hidden" onclick="app.toggleWrite()" aria-label="Write to NFC">
+        📝 <span class="label">Write NFC</span>
+    </button>
+
+    <!-- Mobile toast -->
+    <div id="mobileToast" class="mobile-toast"></div>
 
     <footer>
         <p>

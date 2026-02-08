@@ -216,6 +216,13 @@ const app = {
             // Generate new lot number for new tags
             this.randomizeLotNr();
         }
+
+        // Toggle floating write button visibility (only in create/update)
+        const floatBtn = document.getElementById('floatingWriteBtn');
+        if (floatBtn) {
+            const show = (mode === 'create' || mode === 'update');
+            floatBtn.classList.toggle('hidden', !show);
+        }
     },
 
     clearReadData() {
@@ -519,31 +526,49 @@ const app = {
     },
 
     handleWriteProgress(writeBtn, originalText, format) {
+        const floatBtn = document.getElementById('floatingWriteBtn');
+        const floatingOriginal = floatBtn ? floatBtn.textContent : '📝 Write NFC';
         return (status, error) => {
             writeBtn.disabled = false;
+            if (floatBtn) floatBtn.disabled = false;
             if (status === 'reading') {
                 writeBtn.textContent = '❌ Cancel';
                 writeBtn.classList.remove('btn-success');
                 writeBtn.classList.add('btn-secondary');
+                if (floatBtn) floatBtn.textContent = '❌ Cancel';
                 this.showStatus('writeStatus', 'warning', 'Hold device near NFC tag...');
             } else if (status === 'writing') {
                 writeBtn.disabled = true;
                 writeBtn.textContent = '⏳ Writing...';
+                if (floatBtn) {
+                    floatBtn.disabled = true;
+                    floatBtn.textContent = '⏳ Writing...';
+                }
                 this.showStatus('writeStatus', 'warning', 'Writing to tag...');
             } else if (status === 'success') {
                 writeBtn.textContent = originalText;
                 writeBtn.classList.remove('btn-secondary');
                 writeBtn.classList.add('btn-success');
+                if (floatBtn) {
+                    floatBtn.disabled = false;
+                    floatBtn.textContent = floatingOriginal;
+                }
                 this.showStatus('writeStatus', 'success', `Tag written successfully (${format})`);
+                if (typeof this.showMobileToast === 'function') this.showMobileToast('Tag written successfully', 'success');
             } else if (status === 'error') {
                 writeBtn.textContent = originalText;
                 writeBtn.classList.remove('btn-secondary');
                 writeBtn.classList.add('btn-success');
+                if (floatBtn) {
+                    floatBtn.disabled = false;
+                    floatBtn.textContent = floatingOriginal;
+                }
 
-                const errorMsg = error.name === 'NotAllowedError' ? 'NFC permission denied' :
-                               error.name === 'AbortError' ? 'Write cancelled' :
-                               error.message;
+                const errorMsg = error && error.name === 'NotAllowedError' ? 'NFC permission denied' :
+                               error && error.name === 'AbortError' ? 'Write cancelled' :
+                               (error && error.message) || 'Write failed';
                 this.showStatus('writeStatus', 'error', errorMsg);
+                if (typeof this.showMobileToast === 'function') this.showMobileToast(errorMsg, 'error');
             }
         };
     },
@@ -563,6 +588,11 @@ const app = {
         writeBtn.classList.remove('btn-secondary');
         writeBtn.classList.add('btn-success');
         this.showStatus('writeStatus', '', '');
+        const floatBtn = document.getElementById('floatingWriteBtn');
+        if (floatBtn) {
+            floatBtn.disabled = false;
+            floatBtn.textContent = '📝 Write NFC';
+        }
     },
 
     async writeNFC() {
@@ -757,6 +787,19 @@ const app = {
         if (typeof ColorPicker !== 'undefined' && ColorPicker && typeof ColorPicker.setFromHex === 'function') {
             ColorPicker.setFromHex(paletteId, color);
         }
+    },
+
+    // Mobile toast helper (visible only under mobile media query)
+    _toastTimer: null,
+    showMobileToast(message, type) {
+        const el = document.getElementById('mobileToast');
+        if (!el) return;
+        el.textContent = message;
+        el.className = `mobile-toast show ${type || ''}`.trim();
+        if (this._toastTimer) clearTimeout(this._toastTimer);
+        this._toastTimer = setTimeout(() => {
+            el.classList.remove('show');
+        }, 3500);
     },
 
     rgbToHex(rgb) {
