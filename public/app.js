@@ -83,12 +83,6 @@ const nfcWriter = {
 // Main Application
 const app = {
     nfcSupported: false,
-    colors: [
-        '#FFFFFF', '#fff144', '#DCF478', '#0ACC38', '#057748', '#0d6284', '#0EE2A0', '#76D9F4',
-        '#46a8f9', '#2850E0', '#443089', '#A03CF7', '#F330F9', '#D4B1DD', '#f95d73', '#f72323',
-        '#7c4b00', '#f98c36', '#fcecd6', '#D3C5A3', '#AF7933', '#898989', '#BCBCBC', '#161616'
-    ],
-
     temperaturePresets: {
         'PLA': { minTemp: 190, maxTemp: 220, bedTempMin: 50, bedTempMax: 60 },
         'PETG': { minTemp: 220, maxTemp: 250, bedTempMin: 70, bedTempMax: 80 },
@@ -109,7 +103,9 @@ const app = {
 
     init() {
         this.checkNFC();
-        this.initColorPalette();
+        if (typeof ColorPicker !== 'undefined' && ColorPicker && typeof ColorPicker.init === 'function') {
+            ColorPicker.init(this);
+        }
         this.populateFormats();
         this.initEventListeners();
         this.updateFormat();
@@ -675,42 +671,15 @@ const app = {
         content.classList.toggle('collapsed');
     },
 
-    initColorPalette() {
-        // Initialize four color palettes
-        for (let i = 1; i <= 4; i++) {
-            const palette = document.getElementById(`colorPalette${i}`);
-            const input = document.getElementById(`colorHex${i}`);
-
-            this.colors.forEach(color => {
-                const swatch = document.createElement('div');
-                swatch.className = 'color-swatch';
-                swatch.style.backgroundColor = color;
-                swatch.title = color;
-                swatch.dataset.paletteId = i;
-                swatch.onclick = () => {
-                    input.value = color.replace('#', '').toUpperCase();
-                    this.updateColor(color, i);
-                };
-                palette.appendChild(swatch);
-            });
-        }
-    },
-
     updateColor(color, paletteId) {
-        // Update swatches for specific palette
-        document.querySelectorAll('.color-swatch').forEach(swatch => {
-            const swatchColor = this.rgbToHex(swatch.style.backgroundColor);
-            const swatchPaletteId = parseInt(swatch.dataset.paletteId);
-
-            if (swatchPaletteId === paletteId) {
-                swatch.classList.toggle('selected', swatchColor.toLowerCase() === color.toLowerCase());
-            }
-        });
-
         // Update color preview for specific palette
         const preview = document.getElementById(`colorPreview${paletteId}`);
         if (preview) {
             preview.style.background = color;
+        }
+        // Update canvas picker markers if available
+        if (typeof ColorPicker !== 'undefined' && ColorPicker && typeof ColorPicker.setFromHex === 'function') {
+            ColorPicker.setFromHex(paletteId, color);
         }
     },
 

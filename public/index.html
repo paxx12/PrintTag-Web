@@ -233,6 +233,17 @@
             margin-bottom: 0.75rem;
         }
 
+        /* Ensure canvases inside flex rows can shrink on small screens */
+        .picker-row canvas { min-width: 0; }
+
+        .palette-group-title {
+            margin: 0.25rem 0 0.35rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
         .color-swatch {
             width: 100%;
             height: 35px;
@@ -423,14 +434,17 @@
 
             <div class="form-group">
                 <label>Color 1 (Primary)</label>
-                <div class="color-palette" id="colorPalette1"></div>
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <input type="text" id="colorHex1" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
                     <div id="colorPreview1" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
                 </div>
                 <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                    Enter hex without # (e.g., FF5733)
+                    Hold and drag on the picker to choose, or enter hex without # (e.g., FF5733)
                 </small>
+                <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                    <canvas id="colorSV1" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                </div>
+                <canvas id="colorHue1" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
             </div>
 
             <div class="form-group">
@@ -557,38 +571,47 @@
 
                     <div class="form-group additional-colors" data-field="colorHex2" style="display: none;">
                         <label>Color 2 (Optional)</label>
-                        <div class="color-palette" id="colorPalette2"></div>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <input type="text" id="colorHex2" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
                             <div id="colorPreview2" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
                         </div>
                         <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Enter hex without # (e.g., FF5733)
+                            Hold and drag on the picker to choose, or enter hex without #
                         </small>
+                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                            <canvas id="colorSV2" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                        </div>
+                        <canvas id="colorHue2" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
                     </div>
 
                     <div class="form-group additional-colors" data-field="colorHex3" style="display: none;">
                         <label>Color 3 (Optional)</label>
-                        <div class="color-palette" id="colorPalette3"></div>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <input type="text" id="colorHex3" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
                             <div id="colorPreview3" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
                         </div>
                         <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Enter hex without # (e.g., FF5733)
+                            Hold and drag on the picker to choose, or enter hex without #
                         </small>
+                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                            <canvas id="colorSV3" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                        </div>
+                        <canvas id="colorHue3" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
                     </div>
 
                     <div class="form-group additional-colors" data-field="colorHex4" style="display: none;">
                         <label>Color 4 (Optional)</label>
-                        <div class="color-palette" id="colorPalette4"></div>
                         <div style="display: flex; align-items: center; gap: 0.75rem;">
                             <input type="text" id="colorHex4" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
                             <div id="colorPreview4" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
                         </div>
                         <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Enter hex without # (e.g., FF5733)
+                            Hold and drag on the picker to choose, or enter hex without #
                         </small>
+                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                            <canvas id="colorSV4" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                        </div>
+                        <canvas id="colorHue4" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
                     </div>
 
                     <div class="form-group" data-field="materialName">
@@ -684,6 +707,7 @@
     <script src="openspool.js"></script>
     <script src="openprinttag.js"></script>
     <script src="formats.js"></script>
+    <script src="color.js"></script>
     <script src="app.js"></script>
 </body>
 </html>
