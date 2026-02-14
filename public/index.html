@@ -526,6 +526,17 @@
         <div id="formSection" class="section hidden">
             <h2 class="section-title">✏️ <span id="formTitle">Create New Tag</span></h2>
 
+            <div class="form-group" style="padding-bottom: 1.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                <label>Import From another profile format </label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary" onclick="document.getElementById('importFile').click()" style="margin-top: 0;">📂 Upload File to Fill Form</button>
+                    <input type="file" id="importFile" accept=".json,.bin" style="display: none;">
+                </div>
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                   Supports .json (OpenSpool, Bambu/OrcaSlicer) and .bin (OpenPrintTag)
+                </small>
+            </div>
+
             <div class="form-group">
                 <label>Tag Format</label>
                 <select id="formatSelect" onchange="app.updateFormat()"></select>

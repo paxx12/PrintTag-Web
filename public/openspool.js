@@ -76,11 +76,64 @@ const OpenSpool = {
     },
 
     // Parse OpenSpool data
-    parseData: function(jsonData) {
+    parseData: function(input) {
+        // Handle ArrayBuffer or encoded string input
+        let jsonData = input;
+        if (input instanceof ArrayBuffer || typeof input === 'string') {
+            try {
+                const text = typeof input === 'string' ? input : new TextDecoder().decode(input);
+                jsonData = JSON.parse(text);
+            } catch (e) {
+                console.error('Error parsing JSON:', e);
+                throw new Error("Invalid JSON format");
+            }
+        }
+
+        // Check for Bambu/OrcaSlicer format (has filament_vendor/type arrays)
+        if (jsonData.filament_vendor && Array.isArray(jsonData.filament_vendor) && 
+            jsonData.filament_type && Array.isArray(jsonData.filament_type)) {
+            console.warn('Detected Bambu/OrcaSlicer format, mapping to OpenSpool extended');
+            return this._parseBambuFormat(jsonData);
+        }
+
         if (jsonData.protocol !== "openspool") {
             throw new Error("Not an OpenSpool format");
         }
 
+        return this._parseOpenSpoolFormat(jsonData);
+    },
+
+    _parseBambuFormat: function(jsonData) {
+        // Helper to safely get first element of array or value
+        const getVal = (key) => {
+            const val = jsonData[key];
+            if (Array.isArray(val) && val.length > 0) return val[0];
+            return val;
+        };
+
+        return {
+            format: 'openspool_extended', // Map to extended allows more fields if needed
+            materialType: getVal('filament_type') || 'PLA',
+            brand: getVal('filament_vendor') || 'Generic',
+            
+            // Map temperatures
+            // hot_plate_temp -> Min Bed Temp
+            bedTempMin: getVal('hot_plate_temp') || '',
+            // hot_plate_temp_initial_layer -> Max Bed Temp
+            bedTempMax: getVal('hot_plate_temp_initial_layer') || '',
+            
+            minTemp: getVal('nozzle_temperature_range_low') || '',
+            maxTemp: getVal('nozzle_temperature_range_high') || '',
+            
+            // Defaults for other required fields
+            colorHex: 'FFFFFF',
+            spoolmanId: 0,
+            lotNr: '',
+            extendedSubType: 'Basic'
+        };
+    },
+
+    _parseOpenSpoolFormat: function(jsonData) {
         // Infer format by checking COMPATIBILITY_FIELDS against raw keys
         let format = 'openspool_compat';
         for (const [mode, fieldsObj] of Object.entries(this.COMPATIBILITY_FIELDS)) {
