@@ -703,6 +703,22 @@ const app = {
 
             sizeInfo.style.background = colorStyle;
             document.getElementById('recordSize').textContent = `${size} bytes (${tagType})`;
+
+            // Show Orca profile name for openspool_extended (Snapmaker U1 Extended)
+            const orcaProfileInfo = document.getElementById('orcaProfileInfo');
+            const orcaProfileName = document.getElementById('orcaProfileName');
+
+            if (format === 'openspool_extended') {
+                const brand = formData.brand || 'Generic';
+                const material = formData.materialType || 'PLA';
+                const subtype = formData.extendedSubType || 'Basic';
+                const profileName = `${brand} ${material} ${subtype}`.trim();
+
+                orcaProfileName.textContent = profileName;
+                orcaProfileInfo.classList.remove('hidden');
+            } else {
+                orcaProfileInfo.classList.add('hidden');
+            }
         } catch (e) {
             // Silently fail if form is incomplete
         }
