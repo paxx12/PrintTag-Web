@@ -70,7 +70,7 @@ const formats = {
 
     detectFormatFromFilename(filename) {
         for (const key in this.FORMATS) {
-            if (filename.endsWith(this.FORMATS[key].getFileExtension(key))) {
+            if (filename.endsWith(this.getFileExtension(key))) {
                 return key;
             }
         }
