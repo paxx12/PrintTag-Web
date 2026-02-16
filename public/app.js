@@ -731,6 +731,17 @@ const app = {
         content.classList.toggle('collapsed');
     },
 
+    copyOrcaProfile() {
+        const profileName = document.getElementById('orcaProfileName').textContent;
+        if (profileName && profileName !== '-') {
+            navigator.clipboard.writeText(profileName).then(() => {
+                this.showStatus('writeStatus', 'success', 'Profile name copied to clipboard!');
+            }).catch(() => {
+                this.showStatus('writeStatus', 'error', 'Failed to copy to clipboard');
+            });
+        }
+    },
+
     // Color swatch palette removed in favor of canvas picker
 
     initPalette(name) {
