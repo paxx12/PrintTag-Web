@@ -18,8 +18,8 @@ const OpenSpool = {
             maxTemp: 'max_temp',
             bedTempMin: 'bed_min_temp',
             bedTempMax: 'bed_max_temp',
-            spoolmanId: 'spool_id',
-            lotNr: 'lot_nr',
+            // spoolmanId: 'spool_id', // disabled for now
+            // lotNr: 'lot_nr', // disabled for now
             extendedSubType: 'subtype'
         }
     },
