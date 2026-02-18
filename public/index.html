@@ -1,1388 +1,829 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no"
-    />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
     <link rel="manifest" href="manifest.json" />
     <title>Filament Tag Generator</title>
     <style>
-      :root {
-        --bg-primary: #1a1a1a;
-        --bg-secondary: #2d2d2d;
-        --bg-tertiary: #3d3d3d;
-        --text-primary: #ffffff;
-        --text-secondary: #b0b0b0;
-        --accent: #ff6b35;
-        --accent-hover: #ff8555;
-        --border: #444;
-        --success: #4caf50;
-        --error: #f44336;
-        --warning: #ff9800;
-      }
-
-      /* Floating tooltip-like write button */
-      .floating-tip {
-        position: fixed;
-        top: 12px;
-        right: 12px;
-        z-index: 1000;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 10px 14px;
-        border-radius: 999px;
-        background: var(--accent);
-        border: 1px solid var(--accent-hover);
-        color: #fff;
-        font-size: 0.95rem;
-        font-weight: 700;
-        line-height: 1;
-        cursor: pointer;
-        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35),
-          0 0 0 0 rgba(255, 107, 53, 0.35);
-        width: auto !important;
-        margin: 0; /* override global button margin */
-        animation: tip-pulse 2s ease-out infinite;
-      }
-
-      .floating-tip:hover {
-        background: var(--accent-hover);
-      }
-      .floating-tip:active {
-        transform: translateY(1px);
-      }
-
-      @keyframes tip-pulse {
-        0% {
-          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35),
-            0 0 0 0 rgba(255, 107, 53, 0.35);
+        :root {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-tertiary: #3d3d3d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent: #ff6b35;
+            --accent-hover: #ff8555;
+            --border: #444;
+            --success: #4caf50;
+            --error: #f44336;
+            --warning: #ff9800;
         }
-        70% {
-          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35),
-            0 0 0 14px rgba(255, 107, 53, 0);
-        }
-        100% {
-          box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35),
-            0 0 0 0 rgba(255, 107, 53, 0);
-        }
-      }
 
-      /* Show floating tip only on mobile */
-      @media (min-width: 641px) {
+        /* Floating tooltip-like write button */
         .floating-tip {
-          display: none !important;
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: var(--accent);
+            border: 1px solid var(--accent-hover);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,107,53,0.35);
+            width: auto !important;
+            margin: 0; /* override global button margin */
+            animation: tip-pulse 2s ease-out infinite;
         }
-      }
 
-      /* Mobile toast notification */
-      .mobile-toast {
-        position: fixed;
-        left: 50%;
-        bottom: 16px;
-        transform: translateX(-50%);
-        z-index: 1000;
-        padding: 10px 14px;
-        border-radius: 8px;
-        background: rgba(45, 45, 45, 0.95);
-        color: #fff;
-        font-size: 0.9rem;
-        border: 1px solid var(--border);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-        display: none;
-        max-width: 90%;
-        text-align: center;
-      }
-      .mobile-toast.show {
-        display: block;
-      }
-      .mobile-toast.success {
-        background: rgba(76, 175, 80, 0.95);
-        border-color: rgba(76, 175, 80, 0.8);
-      }
-      .mobile-toast.error {
-        background: rgba(244, 67, 54, 0.95);
-        border-color: rgba(244, 67, 54, 0.8);
-      }
+        .floating-tip:hover { background: var(--accent-hover); }
+        .floating-tip:active { transform: translateY(1px); }
 
-      /* Show toast only on mobile */
-      @media (min-width: 641px) {
+        @keyframes tip-pulse {
+            0%   { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,107,53,0.35); }
+            70%  { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 14px rgba(255,107,53,0); }
+            100% { box-shadow: 0 4px 18px rgba(0,0,0,0.35), 0 0 0 0 rgba(255,107,53,0); }
+        }
+
+        /* Show floating tip only on mobile */
+        @media (min-width: 641px) {
+            .floating-tip { display: none !important; }
+        }
+
+        /* Mobile toast notification */
         .mobile-toast {
-          display: none !important;
+            position: fixed;
+            left: 50%;
+            bottom: 16px;
+            transform: translateX(-50%);
+            z-index: 1000;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: rgba(45,45,45,0.95);
+            color: #fff;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+            display: none;
+            max-width: 90%;
+            text-align: center;
         }
-      }
+        .mobile-toast.show { display: block; }
+        .mobile-toast.success { background: rgba(76,175,80,0.95); border-color: rgba(76,175,80,0.8); }
+        .mobile-toast.error { background: rgba(244,67,54,0.95); border-color: rgba(244,67,54,0.8); }
 
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        line-height: 1.6;
-        min-height: 100vh;
-      }
-
-      header {
-        background: var(--bg-secondary);
-        padding: 1.5rem;
-        border-bottom: 2px solid var(--accent);
-        text-align: center;
-      }
-
-      header h1 {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-      }
-
-      header p {
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-      }
-
-      header a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-
-      header a:hover {
-        text-decoration: underline;
-      }
-
-      .container {
-        max-width: 800px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-      }
-
-      .section {
-        background: var(--bg-secondary);
-        border-radius: 8px;
-        padding: 2rem;
-        border: 1px solid var(--border);
-        margin-bottom: 1rem;
-      }
-
-      .section-title {
-        font-size: 1.5rem;
-        color: var(--accent);
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid var(--accent);
-        padding-bottom: 0.5rem;
-      }
-
-      .form-group {
-        margin-bottom: 1.25rem;
-      }
-
-      label {
-        display: block;
-        margin-bottom: 0.5rem;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-        font-weight: 500;
-      }
-
-      input,
-      select {
-        width: 100%;
-        padding: 0.75rem;
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        color: var(--text-primary);
-        font-size: 1rem;
-      }
-
-      input:focus,
-      select:focus {
-        outline: none;
-        border-color: var(--accent);
-      }
-
-      .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-      }
-
-      button {
-        width: 100%;
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 4px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        margin-top: 0.5rem;
-      }
-
-      button:disabled {
-        background: var(--bg-tertiary);
-        color: var(--text-secondary);
-        cursor: not-allowed;
-      }
-
-      .btn-primary {
-        background: var(--accent);
-        color: white;
-      }
-
-      .btn-primary:hover:not(:disabled) {
-        background: var(--accent-hover);
-      }
-
-      .btn-secondary {
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-      }
-
-      .btn-secondary:hover {
-        background: #4d4d4d;
-      }
-
-      .btn-success {
-        background: var(--success);
-        color: white;
-      }
-
-      .btn-success:hover:not(:disabled) {
-        background: #45a049;
-      }
-
-      .button-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-top: 1rem;
-      }
-
-      .nfc-status {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        background: var(--bg-tertiary);
-        border-radius: 4px;
-        font-size: 0.9rem;
-        margin-bottom: 1rem;
-      }
-
-      .nfc-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        background: var(--error);
-      }
-
-      .nfc-indicator.ready {
-        background: var(--success);
-      }
-
-      .status-message {
-        padding: 0.75rem;
-        border-radius: 4px;
-        margin-top: 0.5rem;
-        font-size: 0.85rem;
-        display: none;
-      }
-
-      .status-message.show {
-        display: block;
-      }
-
-      .status-message.success {
-        background: rgba(76, 175, 80, 0.1);
-        border: 1px solid var(--success);
-        color: var(--success);
-      }
-
-      .status-message.error {
-        background: rgba(244, 67, 54, 0.1);
-        border: 1px solid var(--error);
-        color: var(--error);
-      }
-
-      .status-message.warning {
-        background: rgba(255, 152, 0, 0.1);
-        border: 1px solid var(--warning);
-        color: var(--warning);
-      }
-
-      .info-box {
-        padding: 0.75rem;
-        background: rgba(255, 152, 0, 0.1);
-        border: 1px solid var(--warning);
-        border-radius: 4px;
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-      }
-
-      .color-palette {
-        display: grid;
-        grid-template-columns: repeat(8, 1fr);
-        gap: 0.5rem;
-        margin-bottom: 0.75rem;
-      }
-
-      /* Ensure canvases inside flex rows can shrink on small screens */
-      .picker-row canvas {
-        min-width: 0;
-      }
-
-      .palette-group-title {
-        margin: 0.25rem 0 0.35rem 0;
-        color: var(--text-secondary);
-        font-size: 0.8rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-      }
-
-      .material-palette {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-        gap: 0.4rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .material-swatch {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0.45rem 0.5rem;
-        background: var(--bg-tertiary);
-        color: var(--text-primary);
-        border: 2px solid var(--border);
-        border-radius: 4px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 0.85rem;
-        line-height: 1.2;
-        transition: background 0.15s ease, border-color 0.15s ease,
-          box-shadow 0.15s ease, color 0.15s ease;
-        user-select: none;
-      }
-
-      .material-swatch:hover {
-        background: #4d4d4d;
-      }
-      .material-swatch.selected {
-        background: var(--accent);
-        color: #fff;
-        border-color: var(--accent);
-        box-shadow: 0 0 12px rgba(255, 107, 53, 0.6);
-      }
-
-      /* Tighter material selector on mobile */
-      @media (max-width: 640px) {
-        .material-palette {
-          grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
-          gap: 0.25rem;
+        /* Show toast only on mobile */
+        @media (min-width: 641px) {
+            .mobile-toast { display: none !important; }
         }
-        .material-swatch {
-          padding: 0.3rem 0.4rem;
-          font-size: 0.78rem;
-          border-radius: 3px;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-      }
 
-      /* Ultra-compact on very small screens */
-      @media (max-width: 360px) {
-        .material-palette {
-          grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-          gap: 0.2rem;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
         }
-        .material-swatch {
-          padding: 0.25rem 0.35rem;
-          font-size: 0.72rem;
+
+        header {
+            background: var(--bg-secondary);
+            padding: 1.5rem;
+            border-bottom: 2px solid var(--accent);
+            text-align: center;
         }
-      }
 
-      .color-swatch {
-        width: 100%;
-        height: 35px;
-        border-radius: 4px;
-        cursor: pointer;
-        border: 2px solid var(--border);
-        transition: all 0.2s;
-      }
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
 
-      .color-swatch:hover {
-        transform: scale(1.1);
-      }
+        header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
 
-      .color-swatch.selected {
-        border-color: var(--accent);
-        border-width: 3px;
-        box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
-      }
+        header a {
+            color: var(--accent);
+            text-decoration: none;
+        }
 
-      .collapsible {
-        cursor: pointer;
-        user-select: none;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        background: var(--bg-tertiary);
-        border-radius: 4px;
-        margin: 1.5rem 0 0.5rem;
-      }
+        header a:hover {
+            text-decoration: underline;
+        }
 
-      .collapsible:hover {
-        background: #4d4d4d;
-      }
-
-      .collapsible-icon {
-        transition: transform 0.2s;
-      }
-
-      .collapsible.collapsed .collapsible-icon {
-        transform: rotate(-90deg);
-      }
-
-      .collapsible-content {
-        max-height: 2000px;
-        overflow: hidden;
-        transition: max-height 0.3s ease-out;
-      }
-
-      .collapsible-content.collapsed {
-        max-height: 0;
-      }
-
-      .decoded-data {
-        background: var(--bg-tertiary);
-        padding: 1rem;
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 0.85rem;
-        white-space: pre-wrap;
-        word-break: break-all;
-        max-height: 300px;
-        overflow-y: auto;
-      }
-
-      .hidden {
-        display: none !important;
-      }
-
-      footer {
-        text-align: center;
-        padding: 2rem;
-        color: var(--text-secondary);
-        font-size: 0.9rem;
-      }
-
-      footer a {
-        color: var(--accent);
-        text-decoration: none;
-      }
-
-      footer a:hover {
-        text-decoration: underline;
-      }
-
-      @media (max-width: 640px) {
         .container {
-          margin: 1rem auto;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
+
         .section {
-          padding: 1rem;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 2rem;
+            border: 1px solid var(--border);
+            margin-bottom: 1rem;
         }
-        .form-row,
+
+        .section-title {
+            font-size: 1.5rem;
+            color: var(--accent);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 0.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 0.5rem;
+        }
+
+        button:disabled {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: #4d4d4d;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #45a049;
+        }
+
         .button-group {
-          grid-template-columns: 1fr;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
         }
+
+        .nfc-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .nfc-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--error);
+        }
+
+        .nfc-indicator.ready {
+            background: var(--success);
+        }
+
+        .status-message {
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+
+        .status-message.error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid var(--error);
+            color: var(--error);
+        }
+
+        .status-message.warning {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .info-box {
+            padding: 0.75rem;
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid var(--warning);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
         .color-palette {
-          grid-template-columns: repeat(6, 1fr);
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
         }
-      }
+
+        /* Ensure canvases inside flex rows can shrink on small screens */
+        .picker-row canvas { min-width: 0; }
+
+        .palette-group-title {
+            margin: 0.25rem 0 0.35rem 0;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .material-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+            gap: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .material-swatch {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.45rem 0.5rem;
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            line-height: 1.2;
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+            user-select: none;
+        }
+
+        .material-swatch:hover { background: #4d4d4d; }
+        .material-swatch.selected {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(255, 107, 53, 0.6);
+        }
+
+        /* Tighter material selector on mobile */
+        @media (max-width: 640px) {
+            .material-palette {
+                grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+                gap: 0.25rem;
+            }
+            .material-swatch {
+                padding: 0.3rem 0.4rem;
+                font-size: 0.78rem;
+                border-radius: 3px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        /* Ultra-compact on very small screens */
+        @media (max-width: 360px) {
+            .material-palette {
+                grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+                gap: 0.2rem;
+            }
+            .material-swatch {
+                padding: 0.25rem 0.35rem;
+                font-size: 0.72rem;
+            }
+        }
+
+        .color-swatch {
+            width: 100%;
+            height: 35px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 2px solid var(--border);
+            transition: all 0.2s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.selected {
+            border-color: var(--accent);
+            border-width: 3px;
+            box-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+        }
+
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            margin: 1.5rem 0 0.5rem;
+        }
+
+        .collapsible:hover {
+            background: #4d4d4d;
+        }
+
+        .collapsible-icon {
+            transition: transform 0.2s;
+        }
+
+        .collapsible.collapsed .collapsible-icon {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            max-height: 2000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+        }
+
+        .decoded-data {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 1rem auto;
+            }
+            .section {
+                padding: 1rem;
+            }
+            .form-row, .button-group {
+                grid-template-columns: 1fr;
+            }
+            .color-palette {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <header>
-      <h1>🧵 Filament Tag Generator</h1>
-      <p>
-        <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a> &
-        <a href="https://specs.openprinttag.org/" target="_blank"
-          >OpenPrintTag</a
-        >
-        formats
-      </p>
+        <h1>🧵 Filament Tag Generator</h1>
+        <p>
+            <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a> &
+            <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a> formats
+        </p>
     </header>
 
     <div class="container">
-      <!-- Mode Selection -->
-      <div id="modeSelection" class="section">
-        <h2 class="section-title">What would you like to do?</h2>
-        <div class="button-group" style="margin-top: 2rem">
-          <button
-            class="btn-success"
-            onclick="app.setMode('read')"
-            style="padding: 2rem"
-          >
-            📖 Read / Update Tag
-          </button>
-          <button
-            class="btn-success"
-            onclick="app.setMode('create')"
-            style="padding: 2rem"
-          >
-            ✏️ Create New Tag
-          </button>
-        </div>
-      </div>
-
-      <!-- Read Section -->
-      <div id="readSection" class="section hidden">
-        <h2 class="section-title">📖 Read NFC Tag or Upload File</h2>
-
-        <div class="nfc-status">
-          <div class="nfc-indicator" id="nfcIndicator"></div>
-          <span id="nfcStatusText">Checking NFC...</span>
-        </div>
-
-        <button id="scanBtn" class="btn-success" onclick="app.toggleScan()">
-          Start Scanning
-        </button>
-
-        <div class="status-message" id="readStatus"></div>
-
-        <div class="form-group" style="margin-top: 1.5rem">
-          <label>Or Upload File</label>
-          <input type="file" id="fileInput" accept=".json,.bin" />
-          <small
-            style="
-              color: var(--text-secondary);
-              font-size: 0.8rem;
-              display: block;
-              margin-top: 0.25rem;
-            "
-          >
-            Supports .json (OpenSpool) and .bin (OpenPrintTag)
-          </small>
-        </div>
-
-        <div id="decodedDataContainer" class="hidden" style="margin-top: 1rem">
-          <label>Decoded Data</label>
-          <div class="decoded-data" id="decodedData"></div>
-        </div>
-
-        <button class="btn-secondary" onclick="app.setMode('menu')">
-          ← Back to Menu
-        </button>
-      </div>
-
-      <!-- Form Section -->
-      <div id="formSection" class="section hidden">
-        <h2 class="section-title">
-          ✏️ <span id="formTitle">Create New Tag</span>
-        </h2>
-
-        <div class="form-group">
-          <label>Tag Format</label>
-          <select id="formatSelect" onchange="app.updateFormat()"></select>
-          <small
-            style="
-              color: var(--text-secondary);
-              font-size: 0.8rem;
-              display: block;
-              margin-top: 0.25rem;
-            "
-          >
-            <a href="https://openspool.io/rfid.html" target="_blank"
-              >OpenSpool</a
-            >: Simple JSON |
-            <a href="https://specs.openprinttag.org/" target="_blank"
-              >OpenPrintTag</a
-            >: Advanced CBOR
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label>Brand Name</label>
-          <div class="material-palette" id="brandPalette"></div>
-          <input type="hidden" id="brandValue" value="Generic" />
-          <input
-            type="text"
-            id="brandInput"
-            placeholder="Enter custom brand"
-            class="hidden"
-            style="margin-top: 0.5rem"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Material Type</label>
-          <div class="material-palette" id="materialPalette"></div>
-          <input type="hidden" id="materialType" value="PLA" />
-          <small
-            style="
-              color: var(--text-secondary);
-              font-size: 0.8rem;
-              display: block;
-              margin-top: 0.25rem;
-            "
-          >
-            Tap to select material
-          </small>
-        </div>
-
-        <div class="form-group" data-field="extendedSubType">
-          <label>Material Variant</label>
-          <div class="material-palette" id="variantPalette"></div>
-          <input type="hidden" id="extendedSubType" value="Basic" />
-        </div>
-
-        <div class="form-group">
-          <label>Color 1 (Primary)</label>
-          <div style="display: flex; align-items: center; gap: 0.75rem">
-            <input
-              type="text"
-              id="colorHex1"
-              placeholder="FFFFFF"
-              maxlength="6"
-              pattern="[0-9A-Fa-f]{6}"
-              style="flex: 1"
-            />
-            <div
-              id="colorPreview1"
-              style="
-                width: 60px;
-                height: 40px;
-                border-radius: 4px;
-                border: 2px solid var(--border);
-                background: #ffffff;
-              "
-            ></div>
-          </div>
-          <small
-            style="
-              color: var(--text-secondary);
-              font-size: 0.8rem;
-              display: block;
-              margin-top: 0.25rem;
-            "
-          >
-            Hold and drag on the picker to choose, or enter hex without # (e.g.,
-            FF5733)
-          </small>
-          <div
-            class="picker-row"
-            style="
-              display: flex;
-              gap: 0.5rem;
-              margin-top: 0.5rem;
-              align-items: stretch;
-            "
-          >
-            <canvas
-              id="colorSV1"
-              width="480"
-              height="240"
-              style="
-                flex: 1;
-                height: 180px;
-                border: 1px solid var(--border);
-                border-radius: 4px;
-                display: block;
-              "
-            ></canvas>
-          </div>
-          <canvas
-            id="colorHue1"
-            width="480"
-            height="24"
-            style="
-              width: 100%;
-              height: 20px;
-              border: 1px solid var(--border);
-              border-radius: 4px;
-              display: block;
-              margin-top: 0.5rem;
-            "
-          ></canvas>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" data-field="minTemp">
-            <label>Min Nozzle Temp (°C)</label>
-            <input type="number" id="minTemp" placeholder="220" value="220" />
-          </div>
-          <div class="form-group" data-field="maxTemp">
-            <label>Max Nozzle Temp (°C)</label>
-            <input type="number" id="maxTemp" placeholder="240" value="240" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" data-field="bedTempMin">
-            <label>Min Bed Temp (°C)</label>
-            <input type="number" id="bedTempMin" placeholder="50" />
-          </div>
-          <div class="form-group" data-field="bedTempMax">
-            <label>Max Bed Temp (°C)</label>
-            <input type="number" id="bedTempMax" placeholder="60" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group" data-field="spoolmanId">
-            <label>Spoolman ID</label>
-            <input type="number" id="spoolmanId" placeholder="0" min="0" />
-            <small
-              style="
-                color: var(--text-secondary);
-                font-size: 0.8rem;
-                display: block;
-                margin-top: 0.25rem;
-              "
-            >
-              Optional: Only saved if non-zero
-            </small>
-          </div>
-          <div class="form-group" data-field="lotNr">
-            <label>Lot Number</label>
-            <div style="display: flex; gap: 0.5rem">
-              <input
-                type="text"
-                id="lotNr"
-                placeholder="ABCD1234"
-                maxlength="8"
-                style="flex: 1; font-family: monospace"
-              />
-              <button
-                type="button"
-                class="btn-secondary"
-                onclick="app.randomizeLotNr()"
-                style="width: auto; padding: 0.75rem 1rem; margin-top: 0"
-              >
-                🎲
-              </button>
+        <!-- Mode Selection -->
+        <div id="modeSelection" class="section">
+            <h2 class="section-title">What would you like to do?</h2>
+            <div class="button-group" style="margin-top: 2rem;">
+                <button class="btn-success" onclick="app.setMode('read')" style="padding: 2rem;">
+                    📖 Read / Update Tag
+                </button>
+                <button class="btn-success" onclick="app.setMode('create')" style="padding: 2rem;">
+                    ✏️ Create New Tag
+                </button>
             </div>
-            <small
-              style="
-                color: var(--text-secondary);
-                font-size: 0.8rem;
-                display: block;
-                margin-top: 0.25rem;
-              "
-            >
-              8 hex characters (auto-generated for new tags)
-            </small>
-          </div>
         </div>
 
-        <!-- Advanced Section -->
-        <div id="advancedSection" class="hidden">
-          <div class="collapsible collapsed" onclick="app.toggleAdvanced()">
-            <span class="collapsible-icon">▼</span>
-            <strong>Advanced</strong>
-          </div>
+        <!-- Read Section -->
+        <div id="readSection" class="section hidden">
+            <h2 class="section-title">📖 Read NFC Tag or Upload File</h2>
 
-          <div class="collapsible-content collapsed">
+            <div class="nfc-status">
+                <div class="nfc-indicator" id="nfcIndicator"></div>
+                <span id="nfcStatusText">Checking NFC...</span>
+            </div>
+
+            <button id="scanBtn" class="btn-success" onclick="app.toggleScan()">Start Scanning</button>
+
+            <div class="status-message" id="readStatus"></div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label>Or Upload File</label>
+                <input type="file" id="fileInput" accept=".json,.bin">
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                    Supports .json (OpenSpool) and .bin (OpenPrintTag)
+                </small>
+            </div>
+
+            <div id="decodedDataContainer" class="hidden" style="margin-top: 1rem;">
+                <label>Decoded Data</label>
+                <div class="decoded-data" id="decodedData"></div>
+            </div>
+
+            <button class="btn-secondary" onclick="app.setMode('menu')">← Back to Menu</button>
+        </div>
+
+        <!-- Form Section -->
+        <div id="formSection" class="section hidden">
+            <h2 class="section-title">✏️ <span id="formTitle">Create New Tag</span></h2>
+
             <div class="form-group">
-              <label
-                style="font-weight: 600; margin-bottom: 0.5rem; display: block"
-                >Visual Properties</label
-              >
-              <label
-                data-field="matteFinish"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="matteFinish"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Matte Finish</span>
-              </label>
-              <label
-                data-field="silkFinish"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="silkFinish"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Silk Finish</span>
-              </label>
-              <label
-                data-field="translucent"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="translucent"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Translucent</span>
-              </label>
-              <label
-                data-field="transparent"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="transparent"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Transparent</span>
-              </label>
-              <label
-                data-field="glitter"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="glitter"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Glitter</span>
-              </label>
-
-              <small
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.8rem;
-                  display: block;
-                  margin-top: 0.25rem;
-                "
-              >
-                Surface finish and material properties
-              </small>
+                <label>Tag Format</label>
+                <select id="formatSelect" onchange="app.updateFormat()"></select>
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                    <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a>: Simple JSON |
+                    <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a>: Advanced CBOR
+                </small>
             </div>
 
             <div class="form-group">
-              <label
-                style="font-weight: 600; margin-bottom: 0.5rem; display: block"
-                >Color Behavior</label
-              >
-              <label
-                data-field="gradualColorChange"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="gradualColorChange"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Gradual Color Change</span>
-              </label>
-              <label
-                data-field="coextruded"
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                  margin-bottom: 0.5rem;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="coextruded"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Coextruded</span>
-              </label>
-
-              <small
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.8rem;
-                  display: block;
-                  margin-top: 0.25rem;
-                "
-              >
-                Color transition and mixing properties
-              </small>
+                <label>Brand Name</label>
+                <div class="material-palette" id="brandPalette"></div>
+                <input type="hidden" id="brandValue" value="Generic">
+                <input type="text" id="brandInput" placeholder="Enter custom brand" class="hidden" style="margin-top: 0.5rem;">
             </div>
 
             <div class="form-group">
-              <label
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 0.5rem;
-                  cursor: pointer;
-                "
-              >
-                <input
-                  type="checkbox"
-                  id="showAdditionalColors"
-                  style="width: auto; cursor: pointer"
-                />
-                <span>Additional Colors (Multi-color filament)</span>
-              </label>
-              <small
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.8rem;
-                  display: block;
-                  margin-top: 0.25rem;
-                "
-              >
-                Enable fields for colors 2, 3, and 4
-              </small>
+                <label>Material Type</label>
+                <div class="material-palette" id="materialPalette"></div>
+                <input type="hidden" id="materialType" value="PLA">
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                    Tap to select material
+                </small>
             </div>
 
-            <div
-              class="form-group additional-colors"
-              data-field="colorHex2"
-              style="display: none"
-            >
-              <label>Color 2 (Optional)</label>
-              <div style="display: flex; align-items: center; gap: 0.75rem">
-                <input
-                  type="text"
-                  id="colorHex2"
-                  placeholder="FFFFFF"
-                  maxlength="6"
-                  pattern="[0-9A-Fa-f]{6}"
-                  style="flex: 1"
-                />
-                <div
-                  id="colorPreview2"
-                  style="
-                    width: 60px;
-                    height: 40px;
-                    border-radius: 4px;
-                    border: 2px solid var(--border);
-                    background: #ffffff;
-                  "
-                ></div>
-              </div>
-              <small
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.8rem;
-                  display: block;
-                  margin-top: 0.25rem;
-                "
-              >
-                Hold and drag on the picker to choose, or enter hex without #
-              </small>
-              <div
-                class="picker-row"
-                style="
-                  display: flex;
-                  gap: 0.5rem;
-                  margin-top: 0.5rem;
-                  align-items: stretch;
-                "
-              >
-                <canvas
-                  id="colorSV2"
-                  width="480"
-                  height="240"
-                  style="
-                    flex: 1;
-                    height: 180px;
-                    border: 1px solid var(--border);
-                    border-radius: 4px;
-                    display: block;
-                  "
-                ></canvas>
-              </div>
-              <canvas
-                id="colorHue2"
-                width="480"
-                height="24"
-                style="
-                  width: 100%;
-                  height: 20px;
-                  border: 1px solid var(--border);
-                  border-radius: 4px;
-                  display: block;
-                  margin-top: 0.5rem;
-                "
-              ></canvas>
+            <div class="form-group" data-field="extendedSubType">
+                <label>Material Variant</label>
+                <div class="material-palette" id="variantPalette"></div>
+                <input type="hidden" id="extendedSubType" value="Basic">
             </div>
 
-            <div
-              class="form-group additional-colors"
-              data-field="colorHex3"
-              style="display: none"
-            >
-              <label>Color 3 (Optional)</label>
-              <div style="display: flex; align-items: center; gap: 0.75rem">
-                <input
-                  type="text"
-                  id="colorHex3"
-                  placeholder="FFFFFF"
-                  maxlength="6"
-                  pattern="[0-9A-Fa-f]{6}"
-                  style="flex: 1"
-                />
-                <div
-                  id="colorPreview3"
-                  style="
-                    width: 60px;
-                    height: 40px;
-                    border-radius: 4px;
-                    border: 2px solid var(--border);
-                    background: #ffffff;
-                  "
-                ></div>
-              </div>
-              <small
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.8rem;
-                  display: block;
-                  margin-top: 0.25rem;
-                "
-              >
-                Hold and drag on the picker to choose, or enter hex without #
-              </small>
-              <div
-                class="picker-row"
-                style="
-                  display: flex;
-                  gap: 0.5rem;
-                  margin-top: 0.5rem;
-                  align-items: stretch;
-                "
-              >
-                <canvas
-                  id="colorSV3"
-                  width="480"
-                  height="240"
-                  style="
-                    flex: 1;
-                    height: 180px;
-                    border: 1px solid var(--border);
-                    border-radius: 4px;
-                    display: block;
-                  "
-                ></canvas>
-              </div>
-              <canvas
-                id="colorHue3"
-                width="480"
-                height="24"
-                style="
-                  width: 100%;
-                  height: 20px;
-                  border: 1px solid var(--border);
-                  border-radius: 4px;
-                  display: block;
-                  margin-top: 0.5rem;
-                "
-              ></canvas>
-            </div>
-
-            <div
-              class="form-group additional-colors"
-              data-field="colorHex4"
-              style="display: none"
-            >
-              <label>Color 4 (Optional)</label>
-              <div style="display: flex; align-items: center; gap: 0.75rem">
-                <input
-                  type="text"
-                  id="colorHex4"
-                  placeholder="FFFFFF"
-                  maxlength="6"
-                  pattern="[0-9A-Fa-f]{6}"
-                  style="flex: 1"
-                />
-                <div
-                  id="colorPreview4"
-                  style="
-                    width: 60px;
-                    height: 40px;
-                    border-radius: 4px;
-                    border: 2px solid var(--border);
-                    background: #ffffff;
-                  "
-                ></div>
-              </div>
-              <small
-                style="
-                  color: var(--text-secondary);
-                  font-size: 0.8rem;
-                  display: block;
-                  margin-top: 0.25rem;
-                "
-              >
-                Hold and drag on the picker to choose, or enter hex without #
-              </small>
-              <div
-                class="picker-row"
-                style="
-                  display: flex;
-                  gap: 0.5rem;
-                  margin-top: 0.5rem;
-                  align-items: stretch;
-                "
-              >
-                <canvas
-                  id="colorSV4"
-                  width="480"
-                  height="240"
-                  style="
-                    flex: 1;
-                    height: 180px;
-                    border: 1px solid var(--border);
-                    border-radius: 4px;
-                    display: block;
-                  "
-                ></canvas>
-              </div>
-              <canvas
-                id="colorHue4"
-                width="480"
-                height="24"
-                style="
-                  width: 100%;
-                  height: 20px;
-                  border: 1px solid var(--border);
-                  border-radius: 4px;
-                  display: block;
-                  margin-top: 0.5rem;
-                "
-              ></canvas>
-            </div>
-
-            <div class="form-group" data-field="materialName">
-              <label>Material Name</label>
-              <input
-                type="text"
-                id="materialName"
-                placeholder="e.g., Prusament PLA"
-                maxlength="31"
-              />
+            <div class="form-group">
+                <label>Color 1 (Primary)</label>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <input type="text" id="colorHex1" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                    <div id="colorPreview1" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                </div>
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                    Hold and drag on the picker to choose, or enter hex without # (e.g., FF5733)
+                </small>
+                <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                    <canvas id="colorSV1" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                </div>
+                <canvas id="colorHue1" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
             </div>
 
             <div class="form-row">
-              <div class="form-group" data-field="gtin">
-                <label>GTIN</label>
-                <input type="text" id="gtin" placeholder="Product code" />
-              </div>
-              <div class="form-group" data-field="materialAbbreviation">
-                <label>Material Abbreviation</label>
-                <input
-                  type="text"
-                  id="materialAbbr"
-                  placeholder="e.g., PLA"
-                  maxlength="7"
-                />
-              </div>
+                <div class="form-group" data-field="minTemp">
+                    <label>Min Nozzle Temp (°C)</label>
+                    <input type="number" id="minTemp" placeholder="220" value="220">
+                </div>
+                <div class="form-group" data-field="maxTemp">
+                    <label>Max Nozzle Temp (°C)</label>
+                    <input type="number" id="maxTemp" placeholder="240" value="240">
+                </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group" data-field="density">
-                <label>Density (g/cm³)</label>
-                <input
-                  type="number"
-                  id="density"
-                  step="0.01"
-                  placeholder="1.24"
-                />
-              </div>
-              <div class="form-group" data-field="filamentDiameter">
-                <label>Filament Diameter (mm)</label>
-                <input
-                  type="number"
-                  id="diameter"
-                  step="0.01"
-                  placeholder="1.75"
-                  value="1.75"
-                />
-              </div>
+                <div class="form-group" data-field="bedTempMin">
+                    <label>Min Bed Temp (°C)</label>
+                    <input type="number" id="bedTempMin" placeholder="50">
+                </div>
+                <div class="form-group" data-field="bedTempMax">
+                    <label>Max Bed Temp (°C)</label>
+                    <input type="number" id="bedTempMax" placeholder="60">
+                </div>
             </div>
 
             <div class="form-row">
-              <div class="form-group" data-field="preheatTemp">
-                <label>Preheat Temp (°C)</label>
-                <input type="number" id="preheatTemp" placeholder="170" />
-              </div>
-              <div class="form-group" data-field="manufacturedDate">
-                <label>Manufactured Date</label>
-                <input type="date" id="mfgDate" />
-              </div>
+                <div class="form-group" data-field="spoolmanId">
+                    <label>Spoolman ID</label>
+                    <input type="number" id="spoolmanId" placeholder="0" min="0">
+                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        Optional: Only saved if non-zero
+                    </small>
+                </div>
+                <div class="form-group" data-field="lotNr">
+                    <label>Lot Number</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="lotNr" placeholder="ABCD1234" maxlength="8" style="flex: 1; font-family: monospace;">
+                        <button type="button" class="btn-secondary" onclick="app.randomizeLotNr()" style="width: auto; padding: 0.75rem 1rem; margin-top: 0;">🎲</button>
+                    </div>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        8 hex characters (auto-generated for new tags)
+                    </small>
+                </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group" data-field="nominalWeight">
-                <label>Nominal Weight (g)</label>
-                <input type="number" id="nominalWeight" placeholder="1000" />
-              </div>
-              <div class="form-group" data-field="actualWeight">
-                <label>Actual Weight (g)</label>
-                <input type="number" id="actualWeight" placeholder="1005" />
-              </div>
+            <!-- Advanced Section -->
+            <div id="advancedSection" class="hidden">
+                <div class="collapsible collapsed" onclick="app.toggleAdvanced()">
+                    <span class="collapsible-icon">▼</span>
+                    <strong>Advanced</strong>
+                </div>
+
+                <div class="collapsible-content collapsed">
+                    <div class="form-group">
+                        <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Visual Properties</label>
+                        <label data-field="matteFinish" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="matteFinish" style="width: auto; cursor: pointer;">
+                            <span>Matte Finish</span>
+                        </label>
+                        <label data-field="silkFinish" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="silkFinish" style="width: auto; cursor: pointer;">
+                            <span>Silk Finish</span>
+                        </label>
+                        <label data-field="translucent" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="translucent" style="width: auto; cursor: pointer;">
+                            <span>Translucent</span>
+                        </label>
+                        <label data-field="transparent" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="transparent" style="width: auto; cursor: pointer;">
+                            <span>Transparent</span>
+                        </label>
+                        <label data-field="glitter" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="glitter" style="width: auto; cursor: pointer;">
+                            <span>Glitter</span>
+                        </label>
+
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Surface finish and material properties
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Color Behavior</label>
+                        <label data-field="gradualColorChange" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="gradualColorChange" style="width: auto; cursor: pointer;">
+                            <span>Gradual Color Change</span>
+                        </label>
+                        <label data-field="coextruded" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
+                            <input type="checkbox" id="coextruded" style="width: auto; cursor: pointer;">
+                            <span>Coextruded</span>
+                        </label>
+
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Color transition and mixing properties
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="showAdditionalColors" style="width: auto; cursor: pointer;">
+                            <span>Additional Colors (Multi-color filament)</span>
+                        </label>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Enable fields for colors 2, 3, and 4
+                        </small>
+                    </div>
+
+                    <div class="form-group additional-colors" data-field="colorHex2" style="display: none;">
+                        <label>Color 2 (Optional)</label>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="text" id="colorHex2" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                            <div id="colorPreview2" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                        </div>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Hold and drag on the picker to choose, or enter hex without #
+                        </small>
+                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                            <canvas id="colorSV2" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                        </div>
+                        <canvas id="colorHue2" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                    </div>
+
+                    <div class="form-group additional-colors" data-field="colorHex3" style="display: none;">
+                        <label>Color 3 (Optional)</label>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="text" id="colorHex3" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                            <div id="colorPreview3" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                        </div>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Hold and drag on the picker to choose, or enter hex without #
+                        </small>
+                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                            <canvas id="colorSV3" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                        </div>
+                        <canvas id="colorHue3" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                    </div>
+
+                    <div class="form-group additional-colors" data-field="colorHex4" style="display: none;">
+                        <label>Color 4 (Optional)</label>
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <input type="text" id="colorHex4" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                            <div id="colorPreview4" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                        </div>
+                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                            Hold and drag on the picker to choose, or enter hex without #
+                        </small>
+                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                            <canvas id="colorSV4" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                        </div>
+                        <canvas id="colorHue4" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                    </div>
+
+                    <div class="form-group" data-field="materialName">
+                        <label>Material Name</label>
+                        <input type="text" id="materialName" placeholder="e.g., Prusament PLA" maxlength="31">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="gtin">
+                            <label>GTIN</label>
+                            <input type="text" id="gtin" placeholder="Product code">
+                        </div>
+                        <div class="form-group" data-field="materialAbbreviation">
+                            <label>Material Abbreviation</label>
+                            <input type="text" id="materialAbbr" placeholder="e.g., PLA" maxlength="7">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="density">
+                            <label>Density (g/cm³)</label>
+                            <input type="number" id="density" step="0.01" placeholder="1.24">
+                        </div>
+                        <div class="form-group" data-field="filamentDiameter">
+                            <label>Filament Diameter (mm)</label>
+                            <input type="number" id="diameter" step="0.01" placeholder="1.75" value="1.75">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="preheatTemp">
+                            <label>Preheat Temp (°C)</label>
+                            <input type="number" id="preheatTemp" placeholder="170">
+                        </div>
+                        <div class="form-group" data-field="manufacturedDate">
+                            <label>Manufactured Date</label>
+                            <input type="date" id="mfgDate">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="nominalWeight">
+                            <label>Nominal Weight (g)</label>
+                            <input type="number" id="nominalWeight" placeholder="1000">
+                        </div>
+                        <div class="form-group" data-field="actualWeight">
+                            <label>Actual Weight (g)</label>
+                            <input type="number" id="actualWeight" placeholder="1005">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="emptySpoolWeight">
+                            <label>Empty Spool Weight (g)</label>
+                            <input type="number" id="spoolWeight" placeholder="200">
+                        </div>
+                        <div class="form-group" data-field="countryOfOrigin">
+                            <label>Country of Origin</label>
+                            <input type="text" id="countryCode" placeholder="CZ" maxlength="2">
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group" data-field="emptySpoolWeight">
-                <label>Empty Spool Weight (g)</label>
-                <input type="number" id="spoolWeight" placeholder="200" />
-              </div>
-              <div class="form-group" data-field="countryOfOrigin">
-                <label>Country of Origin</label>
-                <input
-                  type="text"
-                  id="countryCode"
-                  placeholder="CZ"
-                  maxlength="2"
-                />
-              </div>
+            <div class="button-group">
+                <button class="btn-secondary" onclick="app.downloadFile()">💾 Download File</button>
+                <button id="writeBtn" class="btn-success" onclick="app.toggleWrite()">📝 Write to NFC</button>
             </div>
-          </div>
+
+            <div class="info-box" id="recordSizeInfo" style="margin-top: 0.5rem; background: rgba(76, 175, 80, 0.1); border-color: var(--success);">
+                📊 <strong>NDEF Record Size:</strong> <span id="recordSize">?</span>
+            </div>
+
+            <div class="info-box hidden" id="orcaProfileInfo" style="margin-top: 0.5rem; padding: 0.6rem 0.75rem; background: rgba(100, 150, 200, 0.1); border-color: #6496c8; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 0.85rem;">
+                <div style="flex: 1;">
+                    🔧 <strong>Snapmaker Orca Profile:</strong> <code id="orcaProfileName" style="background: rgba(0,0,0,0.2); padding: 0.2rem 0.4rem; border-radius: 3px; font-size: 0.95em; font-weight: bold;">-</code>
+                </div>
+                <button onclick="app.copyOrcaProfile()" style="width: auto; padding: 0.3rem 0.5rem; margin: 0; font-size: 1rem; line-height: 1; flex-shrink: 0;" class="btn-secondary" title="Copy profile name">📋</button>
+            </div>
+
+            <div class="status-message" id="writeStatus"></div>
+
+            <button class="btn-secondary" onclick="app.setMode('menu')">← Back to Menu</button>
         </div>
-
-        <div class="button-group">
-          <button class="btn-secondary" onclick="app.downloadFile()">
-            💾 Download File
-          </button>
-          <button id="writeBtn" class="btn-success" onclick="app.toggleWrite()">
-            📝 Write to NFC
-          </button>
-        </div>
-
-        <div
-          class="info-box"
-          id="recordSizeInfo"
-          style="
-            margin-top: 0.5rem;
-            background: rgba(76, 175, 80, 0.1);
-            border-color: var(--success);
-          "
-        >
-          📊 <strong>NDEF Record Size:</strong> <span id="recordSize">?</span>
-        </div>
-
-        <div
-          class="info-box hidden"
-          id="orcaProfileInfo"
-          style="
-            margin-top: 0.5rem;
-            padding: 0.6rem 0.75rem;
-            background: rgba(100, 150, 200, 0.1);
-            border-color: #6496c8;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            font-size: 0.85rem;
-          "
-        >
-          <div style="flex: 1">
-            🔧 <strong>Snapmaker Orca Profile:</strong>
-            <code
-              id="orcaProfileName"
-              style="
-                background: rgba(0, 0, 0, 0.2);
-                padding: 0.2rem 0.4rem;
-                border-radius: 3px;
-                font-size: 0.95em;
-                font-weight: bold;
-              "
-              >-</code
-            >
-          </div>
-          <button
-            onclick="app.copyOrcaProfile()"
-            style="
-              width: auto;
-              padding: 0.3rem 0.5rem;
-              margin: 0;
-              font-size: 1rem;
-              line-height: 1;
-              flex-shrink: 0;
-            "
-            class="btn-secondary"
-            title="Copy profile name"
-          >
-            📋
-          </button>
-        </div>
-
-        <div class="status-message" id="writeStatus"></div>
-
-        <button class="btn-secondary" onclick="app.setMode('menu')">
-          ← Back to Menu
-        </button>
-      </div>
     </div>
 
     <!-- Floating tooltip-like Write action (visible in create/update modes) -->
-    <button
-      id="floatingWriteBtn"
-      class="floating-tip hidden"
-      onclick="app.toggleWrite()"
-      aria-label="Write to NFC"
-    >
-      📝 <span class="label">Write NFC</span>
+    <button id="floatingWriteBtn" class="floating-tip hidden" onclick="app.toggleWrite()" aria-label="Write to NFC">
+        📝 <span class="label">Write NFC</span>
     </button>
 
     <!-- Mobile toast -->
     <div id="mobileToast" class="mobile-toast"></div>
 
     <footer>
-      <p>
-        Filament Tag Generator - Supporting
-        <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a> &
-        <a href="https://specs.openprinttag.org/" target="_blank"
-          >OpenPrintTag</a
-        >
-        formats
-      </p>
-      <p style="margin-top: 0.5rem; font-size: 0.85rem">
-        © 2025 <a href="https://github.com/paxx12/" target="_blank">paxx12</a> -
-        Open Source Project
-      </p>
+        <p>
+            Filament Tag Generator - Supporting
+            <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a> &
+            <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a> formats
+        </p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">
+            © 2025 <a href="https://github.com/paxx12/" target="_blank">paxx12</a> - Open Source Project
+        </p>
     </footer>
 
     <script src="cbor.js"></script>
@@ -1397,5 +838,5 @@
         navigator.serviceWorker.register("sw.js");
       }
     </script>
-  </body>
+</body>
 </html>
