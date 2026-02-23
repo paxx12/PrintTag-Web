@@ -210,9 +210,10 @@ const app = {
         } else if (mode === 'create') {
             document.getElementById('formSection').classList.remove('hidden');
             document.getElementById('formTitle').textContent = 'Create New Tag';
-            // Repopulate formats and select first by default
+            // Repopulate formats and select openspool_extended by default
             this.populateFormats(false);
-            this.updateFormat();
+            // Reset all fields to defaults
+            this.populateForm({ format: 'openspool_extended' });
             // Generate new lot number for new tags
             this.randomizeLotNr();
         }
@@ -406,10 +407,8 @@ const app = {
         const hasAdditionalColors = (data.colorHex2 && data.colorHex2 !== 'FFFFFF') ||
                                      (data.colorHex3 && data.colorHex3 !== 'FFFFFF') ||
                                      (data.colorHex4 && data.colorHex4 !== 'FFFFFF');
-        if (hasAdditionalColors) {
-            document.getElementById('showAdditionalColors').checked = true;
-            this.toggleAdditionalColors(true);
-        }
+        document.getElementById('showAdditionalColors').checked = hasAdditionalColors;
+        this.toggleAdditionalColors(hasAdditionalColors);
 
         if (data.brand && this.palettes.brand.items.includes(data.brand)) {
             this.setPaletteValue('brand', data.brand);
@@ -426,7 +425,7 @@ const app = {
         document.getElementById('bedTempMax').value = data.bedTempMax || '';
         document.getElementById('spoolmanId').value = data.spoolmanId || '';
         document.getElementById('lotNr').value = data.lotNr || '';
-        this.setPaletteValue('variant', data.extendedSubType || 'Basic');
+        this.setPaletteValue('variant', data.extendedSubType ?? '');
 
         // Advanced fields
         document.getElementById('materialName').value = data.materialName || '';
