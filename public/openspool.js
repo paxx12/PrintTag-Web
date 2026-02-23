@@ -68,7 +68,7 @@ const OpenSpool = {
         if (formData.lotNr) {
             data.lot_nr = formData.lotNr.toUpperCase();
         }
-        if (formData.extendedSubType) {
+        if (formData.extendedSubType != null) {
             data.subtype = formData.extendedSubType;
         }
 

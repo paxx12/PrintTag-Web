@@ -120,8 +120,8 @@ const app = {
         variant: {
             paletteId: 'variantPalette',
             inputId: 'extendedSubType',
-            items: ['Basic', 'Matte', 'SnapSpeed', 'Silk', 'Support', 'HF', '95A', '95A HF'],
-            defaultValue: 'Basic',
+            items: [{label: 'None', value: ''}, 'Basic', 'Matte', 'SnapSpeed', 'Silk', 'Support', 'HF', '95A', '95A HF'],
+            defaultValue: '',
         },
     },
 
@@ -711,7 +711,7 @@ const app = {
             if (format === 'openspool_extended') {
                 const brand = formData.brand || 'Generic';
                 const material = formData.materialType || 'PLA';
-                const subtype = formData.extendedSubType || 'Basic';
+                const subtype = formData.extendedSubType ?? '';
                 const profileName = `${brand} ${material} ${subtype}`.trim();
 
                 orcaProfileName.textContent = profileName;
@@ -752,12 +752,17 @@ const app = {
         const items = typeof config.items === 'function' ? config.items() : config.items;
         const select = (val) => this.setPaletteValue(name, val);
         items.forEach(item => {
-            palette.appendChild(this._createSwatch(item, item, select));
+            if (typeof item === 'object') {
+                palette.appendChild(this._createSwatch(item.label, item.value, select));
+            } else {
+                palette.appendChild(this._createSwatch(item, item, select));
+            }
         });
         if (config.customInputId) {
             palette.appendChild(this._createSwatch('Custom', 'custom', select));
         }
-        select(document.getElementById(config.inputId).value || config.defaultValue);
+        const inputEl = document.getElementById(config.inputId);
+        select(inputEl.value !== '' ? inputEl.value : (config.defaultValue ?? ''));
     },
 
     _createSwatch(label, value, onSelect) {
@@ -767,7 +772,7 @@ const app = {
         box.dataset.value = value;
         box.setAttribute('role', 'button');
         box.setAttribute('tabindex', '0');
-        box.title = `Select ${label}`;
+        box.title = `Select ${value}`;
         box.onclick = () => onSelect(value);
         box.onkeydown = (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
