@@ -310,6 +310,11 @@ const app = {
             this.handleFileUpload(e.target.files[0]);
         });
 
+        document.getElementById('importFile').addEventListener('change', (e) => {
+            this.handleFileUpload(e.target.files[0]);
+            e.target.value = ''; // Reset
+        });
+
         // Add event listeners for all four color inputs
         for (let i = 1; i <= 4; i++) {
             document.getElementById(`colorHex${i}`).addEventListener('input', (e) => {
@@ -356,9 +361,13 @@ const app = {
 
         nfcReader.stop();
 
+        // Determine context for error reporting
+        const isFormVisible = !document.getElementById('formSection').classList.contains('hidden');
+        const statusId = isFormVisible ? 'writeStatus' : 'readStatus';
+
         const format = formats.detectFormatFromFilename(file.name);
         if (!format) {
-            this.showStatus('readStatus', 'error', 'Unsupported file type');
+            this.showStatus(statusId, 'error', 'Unsupported file type');
             return;
         }
 
@@ -369,12 +378,19 @@ const app = {
             try {
                 const data = formats.parseData(format, e.target.result);
                 this.populateForm(data, format);
+                
                 output += `Format: ${formats.getDisplayName(format)}\n`;
                 output += `Material: ${data.materialType}\n`;
-                this.showDecodedData(output);
-                this.transitionToForm(format);
+                
+                if (!isFormVisible) {
+                    this.showDecodedData(output);
+                    this.transitionToForm(format);
+                } else {
+                    // Just update UI if already in form mode
+                    this.showStatus(statusId, 'success', `Loaded ${formats.getDisplayName(format)}`);
+                }
             } catch (err) {
-                this.showStatus('readStatus', 'error', `Invalid ${format} file`);
+                this.showStatus(statusId, 'error', `Invalid ${format} file`);
             }
         };
 
