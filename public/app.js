@@ -132,7 +132,7 @@ const app = {
             ColorPicker.init(this);
         }
         for (const name in this.palettes) this.initPalette(name);
-        this.populateFormats();
+        this.populateFormats(true);
         this.initEventListeners();
         this.updateFormat();
         this.updateVisibility();
