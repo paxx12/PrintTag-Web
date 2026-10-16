@@ -127,16 +127,29 @@ const ColorPicker = {
 
     setupCanvas(canvas, drawFn) {
         const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
+        // Match the drawing buffer to the canvas's on-screen size (times the
+        // screen density). Hidden canvases report a size of 0 and are left at
+        // their current size until shown. (Sizing them from their own buffer
+        // size instead multiplied them by the density on every resize event,
+        // growing hidden pickers to gigantic sizes on phones.)
         const resize = () => {
-            const cssW = canvas.clientWidth || canvas.width;
-            const cssH = canvas.clientHeight || canvas.height;
-            canvas.width = Math.floor(cssW * dpr);
-            canvas.height = Math.floor(cssH * dpr);
+            const dpr = window.devicePixelRatio || 1;
+            const cssW = canvas.clientWidth;
+            const cssH = canvas.clientHeight;
+            if (cssW && cssH) {
+                const w = Math.round(cssW * dpr);
+                const h = Math.round(cssH * dpr);
+                if (canvas.width !== w) canvas.width = w;
+                if (canvas.height !== h) canvas.height = h;
+            }
             drawFn(ctx, canvas.width, canvas.height);
         };
         resize();
         window.addEventListener('resize', resize);
+        // Also resize when a hidden picker is shown or its layout changes
+        if (typeof ResizeObserver !== 'undefined') {
+            new ResizeObserver(resize).observe(canvas);
+        }
         this._resizeHandlers.push(resize);
         return ctx;
     },
