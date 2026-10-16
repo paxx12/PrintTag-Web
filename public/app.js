@@ -122,6 +122,7 @@ const app = {
             inputId: 'extendedSubType',
             items: [{label: 'None', value: ''}, 'Basic', 'Matte', 'SnapSpeed', 'Silk', 'Support', 'HF', '95A', '95A HF'],
             defaultValue: '',
+            customInputId: 'variantInput',
         },
     },
 
@@ -327,10 +328,15 @@ const app = {
             this.toggleAdditionalColors(e.target.checked);
         });
 
-        document.getElementById('brandInput').addEventListener('input', () => {
-            document.getElementById('brandValue').value = document.getElementById('brandInput').value || '';
-            this.updateRecordSize();
-        });
+        // Keep each palette's hidden value in sync with its custom text box
+        for (const name in this.palettes) {
+            const config = this.palettes[name];
+            if (!config.customInputId) continue;
+            document.getElementById(config.customInputId).addEventListener('input', (e) => {
+                document.getElementById(config.inputId).value = e.target.value.trim();
+                this.updateRecordSize();
+            });
+        }
 
         // Add listeners to all input fields to update record size
         const inputFields = ['minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax',
@@ -410,14 +416,7 @@ const app = {
         document.getElementById('showAdditionalColors').checked = hasAdditionalColors;
         this.toggleAdditionalColors(hasAdditionalColors);
 
-        if (data.brand && this.palettes.brand.items.includes(data.brand)) {
-            this.setPaletteValue('brand', data.brand);
-        } else if (data.brand) {
-            document.getElementById('brandInput').value = data.brand;
-            this.setPaletteValue('brand', 'custom');
-        } else {
-            this.setPaletteValue('brand', 'Generic');
-        }
+        this.setPaletteFromData('brand', data.brand || 'Generic');
 
         document.getElementById('minTemp').value = data.minTemp || '';
         document.getElementById('maxTemp').value = data.maxTemp || '';
@@ -425,7 +424,7 @@ const app = {
         document.getElementById('bedTempMax').value = data.bedTempMax || '';
         document.getElementById('spoolmanId').value = data.spoolmanId || '';
         document.getElementById('lotNr').value = data.lotNr || '';
-        this.setPaletteValue('variant', data.extendedSubType ?? '');
+        this.setPaletteFromData('variant', data.extendedSubType ?? '');
 
         // Advanced fields
         document.getElementById('materialName').value = data.materialName || '';
@@ -806,6 +805,23 @@ const app = {
         });
         if (config.onSelect) config.onSelect(value);
         this.updateRecordSize();
+    },
+
+    // Select a palette value loaded from a tag/file. Values that aren't one of
+    // the preset swatches go into the palette's custom text box instead.
+    setPaletteFromData(name, value) {
+        const config = this.palettes[name];
+        const items = typeof config.items === 'function' ? config.items() : config.items;
+        const presets = items.map(item => typeof item === 'object' ? item.value : item);
+        const customInput = config.customInputId ? document.getElementById(config.customInputId) : null;
+
+        if (presets.includes(value) || !customInput) {
+            if (customInput) customInput.value = '';
+            this.setPaletteValue(name, value);
+        } else {
+            customInput.value = value;
+            this.setPaletteValue(name, 'custom');
+        }
     },
 
     updateColor(color, paletteId) {
