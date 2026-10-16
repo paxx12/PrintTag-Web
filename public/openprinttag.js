@@ -156,8 +156,9 @@ const OpenPrintTag = {
             data.set(18, emptySpoolWeight);
         }
 
-        // Field 19: primary_color (Recommended)
-        const colorBytes = this.encodeColorHex(formData.colorHex);
+        // Field 19: primary_color (Recommended). Always written, including
+        // white; only the optional extra colors treat white as "no color".
+        const colorBytes = formData.colorHex ? this.parseColor('#' + formData.colorHex) : null;
         if (colorBytes) {
             data.set(19, colorBytes);
         }

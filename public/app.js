@@ -214,6 +214,9 @@ const app = {
             this.populateFormats(false);
             // Reset all fields to defaults
             this.populateForm({ format: 'openspool_extended' });
+            // The reset above clears the temperature fields, so fill them in
+            // from the default material's preset (PLA) again
+            this.applyTemperaturePreset();
             // Generate new lot number for new tags
             this.randomizeLotNr();
         }
