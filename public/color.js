@@ -229,7 +229,15 @@ const ColorPicker = {
         if (!hsv) return;
 
         this.state[i] = this.state[i] || {};
-        [this.state[i].hue, this.state[i].s, this.state[i].v] = hsv;
+        const st = this.state[i];
+        // Keep the picker as it is if it already shows this color. White, gray
+        // and black have no hue, so re-reading them would reset the hue the
+        // slider just set and snap the square back to red.
+        if (st.hue !== undefined && this.hsvToHex(st.hue, st.s, st.v) === this.hsvToHex(...hsv)) {
+            this.redraw(i);
+            return;
+        }
+        [st.hue, st.s, st.v] = hsv;
         this.redraw(i);
     },
 
