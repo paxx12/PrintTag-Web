@@ -475,8 +475,9 @@
     <header>
         <h1>🧵 Filament Tag Generator</h1>
         <p>
-            <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a> &
-            <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a> formats
+            <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a>,
+            <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a> &
+            <a href="https://opentag3d.info/spec.html" target="_blank">OpenTag3D</a> formats
         </p>
     </header>
 
@@ -511,7 +512,7 @@
                 <label>Or Upload File</label>
                 <input type="file" id="fileInput" accept=".json,.bin">
                 <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                    Supports .json (OpenSpool) and .bin (OpenPrintTag)
+                    Supports .json (OpenSpool) and .bin (OpenPrintTag, OpenTag3D)
                 </small>
             </div>
 
@@ -532,7 +533,8 @@
                 <select id="formatSelect" onchange="app.updateFormat()"></select>
                 <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
                     <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a>: Simple JSON |
-                    <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a>: Advanced CBOR
+                    <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a>: Advanced CBOR |
+                    <a href="https://opentag3d.info/spec.html" target="_blank">OpenTag3D</a>: Binary (NTAG215/216)
                 </small>
             </div>
 
@@ -604,13 +606,13 @@
                     </small>
                 </div>
                 <div class="form-group" data-field="lotNr">
-                    <label>Lot Number</label>
+                    <label id="lotNrLabel">Lot Number</label>
                     <div style="display: flex; gap: 0.5rem;">
                         <input type="text" id="lotNr" placeholder="ABCD1234" maxlength="8" style="flex: 1; font-family: monospace;">
                         <button type="button" class="btn-secondary" onclick="app.randomizeLotNr()" style="width: auto; padding: 0.75rem 1rem; margin-top: 0;">🎲</button>
                     </div>
-                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                        8 hex characters (auto-generated for new tags)
+                    <small id="lotNrHint" style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        8 hex characters
                     </small>
                 </div>
             </div>
@@ -623,7 +625,7 @@
                 </div>
 
                 <div class="collapsible-content collapsed">
-                    <div class="form-group">
+                    <div class="form-group field-group">
                         <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Visual Properties</label>
                         <label data-field="matteFinish" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
                             <input type="checkbox" id="matteFinish" style="width: auto; cursor: pointer;">
@@ -651,7 +653,7 @@
                         </small>
                     </div>
 
-                    <div class="form-group">
+                    <div class="form-group field-group">
                         <label style="font-weight: 600; margin-bottom: 0.5rem; display: block;">Color Behavior</label>
                         <label data-field="gradualColorChange" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; margin-bottom: 0.5rem;">
                             <input type="checkbox" id="gradualColorChange" style="width: auto; cursor: pointer;">
@@ -781,6 +783,44 @@
                             <input type="text" id="countryCode" placeholder="CZ" maxlength="2">
                         </div>
                     </div>
+
+                    <div class="form-group" data-field="colorName">
+                        <label>Color Name</label>
+                        <input type="text" id="colorName" placeholder="e.g., Galaxy Black">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="printTemp">
+                            <label>Target Nozzle Temp (°C)</label>
+                            <input type="number" id="printTemp" placeholder="Middle of min/max">
+                        </div>
+                        <div class="form-group" data-field="bedTemp">
+                            <label>Target Bed Temp (°C)</label>
+                            <input type="number" id="bedTemp" placeholder="Middle of min/max">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="dryTemp">
+                            <label>Drying Temp (°C)</label>
+                            <input type="number" id="dryTemp" placeholder="55">
+                        </div>
+                        <div class="form-group" data-field="dryTime">
+                            <label>Drying Time (h)</label>
+                            <input type="number" id="dryTime" placeholder="8" min="0" max="255">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group" data-field="chamberTemp">
+                            <label>Chamber Temp (°C)</label>
+                            <input type="number" id="chamberTemp" placeholder="0 = unheated">
+                        </div>
+                        <div class="form-group" data-field="td">
+                            <label>TD (mm)</label>
+                            <input type="number" id="td" step="0.1" placeholder="e.g., 3.5">
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -800,6 +840,11 @@
                 <button onclick="app.copyOrcaProfile()" style="width: auto; padding: 0.3rem 0.5rem; margin: 0; font-size: 1rem; line-height: 1; flex-shrink: 0;" class="btn-secondary" title="Copy profile name">📋</button>
             </div>
 
+            <div class="info-box hidden" id="formatWarnings" style="margin-top: 0.5rem; padding: 0.6rem 0.75rem; background: rgba(255, 152, 0, 0.1); border-color: var(--warning); font-size: 0.85rem;">
+                ⚠️ <strong>Will change when written:</strong>
+                <ul id="formatWarningsList" style="margin: 0.35rem 0 0 1.1rem; padding: 0;"></ul>
+            </div>
+
             <div class="status-message" id="writeStatus"></div>
 
             <button class="btn-secondary" onclick="app.setMode('menu')">← Back to Menu</button>
@@ -817,8 +862,9 @@
     <footer>
         <p>
             Filament Tag Generator - Supporting
-            <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a> &
-            <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a> formats
+            <a href="https://openspool.io/rfid.html" target="_blank">OpenSpool</a>,
+            <a href="https://specs.openprinttag.org/" target="_blank">OpenPrintTag</a> &
+            <a href="https://opentag3d.info/spec.html" target="_blank">OpenTag3D</a> formats
         </p>
         <p style="margin-top: 0.5rem; font-size: 0.85rem;">
             © 2025 <a href="https://github.com/paxx12/" target="_blank">paxx12</a> - Open Source Project
@@ -829,6 +875,7 @@
     <script src="ndef.js"></script>
     <script src="openspool.js"></script>
     <script src="openprinttag.js"></script>
+    <script src="opentag3d.js"></script>
     <script src="formats.js"></script>
     <script src="color.js"></script>
     <script src="app.js"></script>

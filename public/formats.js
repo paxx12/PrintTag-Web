@@ -2,6 +2,7 @@ const formats = {
     FORMATS: {
         'openspool_extended': { module: OpenSpool, label: 'OpenSpool - Snapmaker U1 Extended (JSON)', hidden: false },
         'openspool_compat': { module: OpenSpool, label: 'OpenSpool - Compat (JSON)', hidden: false },
+        'opentag3d': { module: OpenTag3D, label: 'OpenTag3D v2 (Binary)', hidden: true },
         'openprinttag': { module: OpenPrintTag, label: 'OpenPrintTag (CBOR)', hidden: true }
     },
 
@@ -47,6 +48,12 @@ const formats = {
             return { format: 'openprinttag', data: openprinttagData };
         }
 
+        // Try OpenTag3D
+        const opentag3dData = OpenTag3D.parseNDEFRecord(record);
+        if (opentag3dData) {
+            return { format: 'opentag3d', data: opentag3dData };
+        }
+
         return null;
     },
 
@@ -68,11 +75,26 @@ const formats = {
         return this.FORMATS[format].module.getFileExtension(format);
     },
 
-    detectFormatFromFilename(filename) {
+    // Warnings about values that will change when written (format-specific)
+    getWarnings(format, formData) {
+        const module = this.FORMATS[format] && this.FORMATS[format].module;
+        if (!module || typeof module.getWarnings !== 'function') return [];
+        try {
+            return module.getWarnings(formData);
+        } catch (e) {
+            return [];
+        }
+    },
+
+    // Parse a downloaded tag file. Several formats share an extension (.bin),
+    // so try each format matching the extension and use the first that parses.
+    parseFile(filename, buffer) {
+        const name = filename.toLowerCase();
         for (const key in this.FORMATS) {
-            if (filename.endsWith(this.FORMATS[key].getFileExtension(key))) {
-                return key;
-            }
+            const module = this.FORMATS[key].module;
+            if (!name.endsWith(module.getFileExtension(key))) continue;
+            const data = module.readBinary(buffer);
+            if (data) return { format: data.format || key, data };
         }
         return null;
     },
