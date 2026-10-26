@@ -410,14 +410,7 @@ const app = {
         document.getElementById('showAdditionalColors').checked = hasAdditionalColors;
         this.toggleAdditionalColors(hasAdditionalColors);
 
-        if (data.brand && this.palettes.brand.items.includes(data.brand)) {
-            this.setPaletteValue('brand', data.brand);
-        } else if (data.brand) {
-            document.getElementById('brandInput').value = data.brand;
-            this.setPaletteValue('brand', 'custom');
-        } else {
-            this.setPaletteValue('brand', 'Generic');
-        }
+        this.restorePaletteValue('brand', data.brand || 'Generic');
 
         document.getElementById('minTemp').value = data.minTemp || '';
         document.getElementById('maxTemp').value = data.maxTemp || '';
@@ -520,6 +513,7 @@ const app = {
 
         const data = formats.generateData(format, formData);
         formats.download(format, data);
+        this.saveCustomValues(formData);
 
         this.showStatus('writeStatus', 'success', `${formats.getDisplayName(format)} file downloaded`);
     },
@@ -553,6 +547,7 @@ const app = {
                     floatBtn.textContent = floatingOriginal;
                 }
                 this.showStatus('writeStatus', 'success', `Tag written successfully (${format})`);
+                this.saveCustomValues(this.getFormData());
                 if (typeof this.showMobileToast === 'function') this.showMobileToast('Tag written successfully', 'success');
             } else if (status === 'error') {
                 writeBtn.textContent = originalText;
@@ -662,6 +657,14 @@ const app = {
             document.getElementById('maxTemp').value = preset.maxTemp;
             document.getElementById('bedTempMin').value = preset.bedTempMin;
             document.getElementById('bedTempMax').value = preset.bedTempMax;
+        } else {
+            // A saved custom material brings back the temps it was last written with
+            const saved = this.getSavedTemps(materialType);
+            if (saved) {
+                this.TEMP_FIELDS.forEach(id => {
+                    if (saved[id] !== undefined && saved[id] !== '') document.getElementById(id).value = saved[id];
+                });
+            }
         }
         this.updateRecordSize();
     },
@@ -758,10 +761,220 @@ const app = {
             }
         });
         if (config.customInputId) {
+            // Custom values saved from earlier tags, then the Custom box
+            this.getSavedValues(name).forEach(value => {
+                const swatch = this._createSwatch(value, value, select);
+                swatch.classList.add('saved');
+                swatch.title = `Saved custom value: ${value}`;
+                palette.appendChild(swatch);
+            });
             palette.appendChild(this._createSwatch('Custom', 'custom', select));
         }
         const inputEl = document.getElementById(config.inputId);
         select(inputEl.value !== '' ? inputEl.value : (config.defaultValue ?? ''));
+    },
+
+    // --- Saved custom values (per browser) ---
+
+    SAVED_VALUES_KEY: 'printtag-saved-custom-values',
+    MAX_SAVED_VALUES: 20,
+    // Form field written for each palette
+    PALETTE_FORM_KEYS: { brand: 'brand', material: 'materialType', variant: 'extendedSubType' },
+
+    loadSavedValues() {
+        try {
+            const all = JSON.parse(localStorage.getItem(this.SAVED_VALUES_KEY) || '{}');
+            return all && typeof all === 'object' && !Array.isArray(all) ? all : {};
+        } catch (e) {
+            return {};
+        }
+    },
+
+    getSavedValues(name) {
+        const list = this.loadSavedValues()[name];
+        return Array.isArray(list) ? list.filter(v => typeof v === 'string' && v.trim()) : [];
+    },
+
+    setSavedValues(name, list) {
+        const all = this.loadSavedValues();
+        if (list.length) all[name] = list;
+        else delete all[name];
+        try {
+            localStorage.setItem(this.SAVED_VALUES_KEY, JSON.stringify(all));
+        } catch (e) {
+            // Storage unavailable (e.g. private mode); saved values just won't persist
+        }
+    },
+
+    presetValues(name) {
+        const config = this.palettes[name];
+        const items = typeof config.items === 'function' ? config.items() : config.items;
+        return items.map(item => typeof item === 'object' ? item.value : item);
+    },
+
+    // Preset and saved values a palette can select directly
+    paletteValues(name) {
+        return [...this.presetValues(name), ...this.getSavedValues(name)];
+    },
+
+    // Select a value: its swatch if there is one, otherwise the Custom box
+    restorePaletteValue(name, value) {
+        const config = this.palettes[name];
+        if (this.paletteValues(name).includes(value) || !config.customInputId) {
+            this.setPaletteValue(name, value);
+        } else {
+            document.getElementById(config.customInputId).value = value;
+            this.setPaletteValue(name, 'custom');
+        }
+    },
+
+    // Re-render a palette's swatches, keeping its current value selected
+    refreshPalette(name) {
+        const value = document.getElementById(this.palettes[name].inputId).value;
+        this.initPalette(name);
+        this.restorePaletteValue(name, value);
+    },
+
+    // --- Temperatures remembered for saved custom materials ---
+
+    SAVED_TEMPS_KEY: 'printtag-saved-material-temps',
+    TEMP_FIELDS: ['minTemp', 'maxTemp', 'bedTempMin', 'bedTempMax'],
+
+    loadSavedTemps() {
+        try {
+            const all = JSON.parse(localStorage.getItem(this.SAVED_TEMPS_KEY) || '{}');
+            return all && typeof all === 'object' && !Array.isArray(all) ? all : {};
+        } catch (e) {
+            return {};
+        }
+    },
+
+    storeSavedTemps(all) {
+        try {
+            if (Object.keys(all).length) localStorage.setItem(this.SAVED_TEMPS_KEY, JSON.stringify(all));
+            else localStorage.removeItem(this.SAVED_TEMPS_KEY);
+        } catch (e) {
+            // Storage unavailable; temps just won't be remembered
+        }
+    },
+
+    getSavedTemps(material) {
+        const temps = material ? this.loadSavedTemps()[material] : null;
+        return temps && typeof temps === 'object' ? temps : null;
+    },
+
+    // Keep the temps written with a custom (non-preset) material, and drop
+    // temps for materials that are no longer saved
+    saveMaterialTemps(formData) {
+        if (!this.palettes.material.customInputId) return;
+        const material = (formData.materialType || '').trim();
+        const all = this.loadSavedTemps();
+        if (material && !this.materialPresets[material]) {
+            const temps = {};
+            this.TEMP_FIELDS.forEach(id => {
+                const v = String(formData[id] ?? '').trim();
+                if (v !== '') temps[id] = v;
+            });
+            if (Object.keys(temps).length) all[material] = temps;
+        }
+        const keep = new Set([...this.getSavedValues('material'), material]);
+        Object.keys(all).forEach(m => { if (!keep.has(m)) delete all[m]; });
+        this.storeSavedTemps(all);
+    },
+
+    // Remember custom values on a tag that was written or downloaded
+    saveCustomValues(formData) {
+        // Temps first, so re-selecting the newly saved material keeps them
+        this.saveMaterialTemps(formData);
+        for (const name in this.palettes) {
+            if (!this.palettes[name].customInputId) continue;
+            const value = (formData[this.PALETTE_FORM_KEYS[name]] || '').trim();
+            if (!value || this.paletteValues(name).includes(value)) continue;
+            const saved = [...this.getSavedValues(name), value].slice(-this.MAX_SAVED_VALUES);
+            this.setSavedValues(name, saved);
+            this.refreshPalette(name);
+        }
+    },
+
+    removeSavedValue(name, value) {
+        this.setSavedValues(name, this.getSavedValues(name).filter(v => v !== value));
+        if (name === 'material') {
+            const all = this.loadSavedTemps();
+            delete all[value];
+            this.storeSavedTemps(all);
+        }
+        this.refreshPalette(name);
+    },
+
+    // Clear the saved values of every palette after confirmation
+    resetSavedValues() {
+        if (!window.confirm('Remove all saved custom values and go back to the default lists?')) return;
+        for (const name in this.palettes) {
+            if (!this.palettes[name].customInputId || !this.getSavedValues(name).length) continue;
+            this.setSavedValues(name, []);
+            this.refreshPalette(name);
+        }
+        this.storeSavedTemps({});
+        this.updateResetButton();
+    },
+
+    // Palettes that can have saved values, in page order
+    savablePalettes() {
+        return Object.keys(this.palettes).filter(name =>
+            this.palettes[name].customInputId && document.getElementById(this.palettes[name].paletteId));
+    },
+
+    // One "Reset saved custom values" button below the last such palette,
+    // shown only while any palette has saved values
+    updateResetButton() {
+        const names = this.savablePalettes();
+        if (!names.length) return;
+        let row = document.getElementById('savedValuesReset');
+        if (!row) {
+            const lastPalette = document.getElementById(this.palettes[names[names.length - 1]].paletteId);
+            const group = lastPalette.closest('.form-group') || lastPalette;
+            row = document.createElement('div');
+            row.id = 'savedValuesReset';
+            row.className = 'saved-actions form-group';
+            const reset = document.createElement('button');
+            reset.type = 'button';
+            reset.className = 'btn-secondary';
+            reset.textContent = '↺ Reset saved custom values';
+            reset.onclick = () => this.resetSavedValues();
+            row.appendChild(reset);
+            group.insertAdjacentElement('afterend', row);
+        }
+        row.classList.toggle('hidden', !names.some(name => this.getSavedValues(name).length));
+    },
+
+    // Remove / Reset buttons under a palette that has saved values
+    updateSavedActions(name) {
+        const config = this.palettes[name];
+        const palette = document.getElementById(config.paletteId);
+        if (!palette || !config.customInputId) return;
+        let row = document.getElementById(`${config.paletteId}Saved`);
+        if (!row) {
+            row = document.createElement('div');
+            row.id = `${config.paletteId}Saved`;
+            row.className = 'saved-actions';
+            palette.insertAdjacentElement('afterend', row);
+        }
+        const saved = this.getSavedValues(name);
+        const value = document.getElementById(config.inputId).value;
+        const customInput = document.getElementById(config.customInputId);
+        const selectedSaved = saved.includes(value) && customInput.classList.contains('hidden') ? value : null;
+        // Only a Remove button for the selected saved value
+        row.innerHTML = '';
+        row.classList.toggle('hidden', !selectedSaved);
+        if (selectedSaved) {
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'btn-secondary';
+            remove.textContent = `🗑 Remove "${selectedSaved}"`;
+            remove.onclick = () => this.removeSavedValue(name, selectedSaved);
+            row.appendChild(remove);
+        }
+        this.updateResetButton();
     },
 
     _createSwatch(label, value, onSelect) {
@@ -805,6 +1018,7 @@ const app = {
             el.setAttribute('aria-selected', isSelected ? 'true' : 'false');
         });
         if (config.onSelect) config.onSelect(value);
+        this.updateSavedActions(name);
         this.updateRecordSize();
     },
 
