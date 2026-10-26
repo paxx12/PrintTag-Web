@@ -20,9 +20,21 @@ const OpenSpool = {
             bedTempMax: 'bed_max_temp',
             // spoolmanId: 'spool_id', // disabled for now
             // lotNr: 'lot_nr', // disabled for now
-            extendedSubType: 'subtype'
+            extendedSubType: 'subtype',
+            // Extra colors 2-5 for multi-color filament, stored in order
+            colorHex2: 'additional_color_hexes',
+            colorHex3: 'additional_color_hexes',
+            colorHex4: 'additional_color_hexes',
+            colorHex5: 'additional_color_hexes',
+            // How the colors run, using OrcaSlicer's filament_colour_type values:
+            // 0 = gradient, 1 = default (single color or segments). Only 0 is
+            // written; when it's missing, readers treat it as 1.
+            colorType: 'color_type'
         }
     },
+
+    // Most extra colors a tag can carry (OpenRFID reads up to 4)
+    MAX_ADDITIONAL_COLORS: 4,
 
     // Return list of fields available based on formData (e.g., format)
     availableFields: function(formData) {
@@ -46,6 +58,16 @@ const OpenSpool = {
             type: formData.materialType,
             color_hex: formData.colorHex.replace('#', '').toUpperCase(),
         };
+
+        const additionalColors = [];
+        for (let i = 2; i <= this.MAX_ADDITIONAL_COLORS + 1; i++) {
+            const hex = formData[`colorHex${i}`];
+            if (hex) additionalColors.push(hex.replace('#', '').toUpperCase());
+        }
+        if (additionalColors.length) {
+            data.additional_color_hexes = additionalColors;
+            if (formData.colorType === '0') data.color_type = 0;
+        }
 
         if (formData.brand) {
             data.brand = formData.brand;
@@ -94,7 +116,7 @@ const OpenSpool = {
             }
         }
 
-        return {
+        const result = {
             format,
             materialType: jsonData.type || 'PLA',
             colorHex: jsonData.color_hex || 'FFFFFF',
@@ -107,6 +129,17 @@ const OpenSpool = {
             lotNr: jsonData.lot_nr || '',
             extendedSubType: jsonData.subtype || ''
         };
+
+        // 0 = gradient; anything else (or missing) = solid/segments
+        result.colorType = String(jsonData.color_type) === '0' ? '0' : '1';
+
+        // Extra colors map to colorHex2..colorHex5 in order
+        const additional = Array.isArray(jsonData.additional_color_hexes) ? jsonData.additional_color_hexes : [];
+        additional.slice(0, this.MAX_ADDITIONAL_COLORS).forEach((hex, idx) => {
+            result[`colorHex${idx + 2}`] = String(hex).replace('#', '').toUpperCase();
+        });
+
+        return result;
     },
 
     // Create NDEF record for NFC writing

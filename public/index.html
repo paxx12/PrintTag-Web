@@ -573,6 +573,101 @@
                 <canvas id="colorHue1" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
             </div>
 
+            <!-- Extra colors for multi-color filament. Each one must be enabled
+                 before it can be set, and only enabled colors are written. -->
+            <small data-field="colorHex2" style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin: 0 0 0.5rem;">
+                Multi-color filament: enable each extra color to set it
+            </small>
+            <div class="form-group extra-color" data-field="colorHex2" data-color-index="2">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="colorEnable2" style="width: auto; cursor: pointer;">
+                    <span>Color 2</span>
+                </label>
+                <div id="colorFields2" style="display: none; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <input type="text" id="colorHex2" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                        <div id="colorPreview2" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                    </div>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        Hold and drag on the picker to choose, or enter hex without #
+                    </small>
+                    <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                        <canvas id="colorSV2" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                    </div>
+                    <canvas id="colorHue2" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                </div>
+            </div>
+            <div class="form-group extra-color" data-field="colorHex3" data-color-index="3">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="colorEnable3" style="width: auto; cursor: pointer;">
+                    <span>Color 3</span>
+                </label>
+                <div id="colorFields3" style="display: none; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <input type="text" id="colorHex3" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                        <div id="colorPreview3" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                    </div>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        Hold and drag on the picker to choose, or enter hex without #
+                    </small>
+                    <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                        <canvas id="colorSV3" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                    </div>
+                    <canvas id="colorHue3" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                </div>
+            </div>
+            <div class="form-group extra-color" data-field="colorHex4" data-color-index="4">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="colorEnable4" style="width: auto; cursor: pointer;">
+                    <span>Color 4</span>
+                </label>
+                <div id="colorFields4" style="display: none; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <input type="text" id="colorHex4" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                        <div id="colorPreview4" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                    </div>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        Hold and drag on the picker to choose, or enter hex without #
+                    </small>
+                    <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                        <canvas id="colorSV4" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                    </div>
+                    <canvas id="colorHue4" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                </div>
+            </div>
+            <div class="form-group extra-color" data-field="colorHex5" data-color-index="5">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" id="colorEnable5" style="width: auto; cursor: pointer;">
+                    <span>Color 5</span>
+                </label>
+                <div id="colorFields5" style="display: none; margin-top: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <input type="text" id="colorHex5" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
+                        <div id="colorPreview5" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
+                    </div>
+                    <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                        Hold and drag on the picker to choose, or enter hex without #
+                    </small>
+                    <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
+                        <canvas id="colorSV5" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
+                    </div>
+                    <canvas id="colorHue5" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
+                </div>
+            </div>
+
+            <!-- How a multi-color spool's colors run along the strand. Shown once
+                 there are 2+ colors. Gradient is written as "color_type": 0
+                 (OrcaSlicer's filament_colour_type values); Segments is the
+                 default, so the field is left out. -->
+            <div class="form-group" id="colorTypeGroup" data-field="colorType" style="display: none;">
+                <label>Multi-color Style</label>
+                <div class="material-palette" id="colorTypePalette"></div>
+                <input type="hidden" id="colorType" value="1">
+                <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
+                    Gradient: the colors blend into each other. Segments: each color is a solid stretch.
+                </small>
+            </div>
+
             <div class="form-row">
                 <div class="form-group" data-field="minTemp">
                     <label>Min Nozzle Temp (°C)</label>
@@ -665,61 +760,6 @@
                         <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
                             Color transition and mixing properties
                         </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                            <input type="checkbox" id="showAdditionalColors" style="width: auto; cursor: pointer;">
-                            <span>Additional Colors (Multi-color filament)</span>
-                        </label>
-                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Enable fields for colors 2, 3, and 4
-                        </small>
-                    </div>
-
-                    <div class="form-group additional-colors" data-field="colorHex2" style="display: none;">
-                        <label>Color 2 (Optional)</label>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <input type="text" id="colorHex2" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
-                            <div id="colorPreview2" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
-                        </div>
-                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Hold and drag on the picker to choose, or enter hex without #
-                        </small>
-                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
-                            <canvas id="colorSV2" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
-                        </div>
-                        <canvas id="colorHue2" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
-                    </div>
-
-                    <div class="form-group additional-colors" data-field="colorHex3" style="display: none;">
-                        <label>Color 3 (Optional)</label>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <input type="text" id="colorHex3" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
-                            <div id="colorPreview3" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
-                        </div>
-                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Hold and drag on the picker to choose, or enter hex without #
-                        </small>
-                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
-                            <canvas id="colorSV3" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
-                        </div>
-                        <canvas id="colorHue3" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
-                    </div>
-
-                    <div class="form-group additional-colors" data-field="colorHex4" style="display: none;">
-                        <label>Color 4 (Optional)</label>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <input type="text" id="colorHex4" placeholder="FFFFFF" maxlength="6" pattern="[0-9A-Fa-f]{6}" style="flex: 1;">
-                            <div id="colorPreview4" style="width: 60px; height: 40px; border-radius: 4px; border: 2px solid var(--border); background: #FFFFFF;"></div>
-                        </div>
-                        <small style="color: var(--text-secondary); font-size: 0.8rem; display: block; margin-top: 0.25rem;">
-                            Hold and drag on the picker to choose, or enter hex without #
-                        </small>
-                        <div class="picker-row" style="display:flex; gap:0.5rem; margin-top:0.5rem; align-items:stretch;">
-                            <canvas id="colorSV4" width="480" height="240" style="flex:1; height: 180px; border: 1px solid var(--border); border-radius: 4px; display:block;"></canvas>
-                        </div>
-                        <canvas id="colorHue4" width="480" height="24" style="width: 100%; height: 20px; border: 1px solid var(--border); border-radius: 4px; display:block; margin-top:0.5rem;"></canvas>
                     </div>
 
                     <div class="form-group" data-field="materialName">
