@@ -2,43 +2,24 @@
 // CBOR-based format for 3D printing filament tags
 
 const OpenPrintTag = {
-    // Material type enum mapping
+    // Material type enum (material_type_enum.yaml in the OpenPrintTag spec,
+    // https://github.com/OpenPrintTag/openprinttag-specification). Keys are the
+    // spec's numbers; fibre-filled variants such as PLA-CF are the base type
+    // plus a tag (see FILL_TAGS), as the spec describes them.
     MATERIAL_TYPES: {
-        'pla': 0,
-        'petg': 1,
-        'abs': 2,
-        'asa': 3,
-        'tpu': 4,
-        'pa': 5,
-        'pa12': 6,
-        'pc': 7,
-        'peek': 8,
-        'pva': 9,
-        'hips': 10,
-        'asa-cf': 11,
-        'pctg': 12,
-        'tpu-ams': 13,
-        'pa-cf': 14,
-        'pa-gf': 15,
-        'pa6-cf': 16,
-        'pla-cf': 17,
-        'pet-cf': 18,
-        'petg-cf': 19,
-        'pla-aero': 20,
-        'pps': 21,
-        'pps-cf': 22,
-        'ppa-cf': 23,
-        'ppa-gf': 24,
-        'abs-gf': 25,
-        'asa-aero': 26,
-        'pe': 27,
-        'pp': 28,
-        'eva': 29,
-        'pha': 30,
-        'bvoh': 31,
-        'pe-cf': 32,
-        'pp-cf': 33,
-        'pp-gf': 34
+        'pla': 0, 'petg': 1, 'tpu': 2, 'abs': 3, 'asa': 4, 'pc': 5, 'pctg': 6,
+        'pp': 7, 'pa6': 8, 'pa11': 9, 'pa12': 10, 'pa66': 11, 'cpe': 12,
+        'tpe': 13, 'hips': 14, 'pha': 15, 'pet': 16, 'pei': 17, 'pbt': 18,
+        'pvb': 19, 'pva': 20, 'pekk': 21, 'peek': 22, 'bvoh': 23, 'tpc': 24,
+        'pps': 25, 'ppsu': 26, 'pvc': 27, 'peba': 28, 'pvdf': 29, 'ppa': 30,
+        'pcl': 31, 'pes': 32, 'pmma': 33, 'pom': 34, 'ppe': 35, 'ps': 36,
+        'psu': 37, 'tpi': 38, 'sbs': 39, 'obc': 40, 'eva': 41, 'pa612': 42
+    },
+
+    // "<base>-<suffix>" material names and the tag (tags_enum.yaml) they map to
+    FILL_TAGS: {
+        'cf': 31, // contains_carbon_fiber
+        'gf': 34  // contains_glass_fiber
     },
 
     MATERIAL_CLASSES: {
@@ -102,16 +83,32 @@ const OpenPrintTag = {
     },
 
     // Generate OpenPrintTag CBOR data
+    // "PLA-CF" -> { base: 'pla', suffix: 'cf' }; "PA12" -> { base: 'pa12', suffix: '' }
+    splitMaterial: function(name) {
+        const lower = (name || '').toLowerCase().trim();
+        const dash = lower.lastIndexOf('-');
+        if (dash > 0 && this.FILL_TAGS[lower.substring(dash + 1)] !== undefined) {
+            return { base: lower.substring(0, dash), suffix: lower.substring(dash + 1) };
+        }
+        return { base: lower, suffix: '' };
+    },
+
     generateData: function(formData) {
         const data = new Map();
 
         // Field 8: material_class (Required)
         data.set(8, this.MATERIAL_CLASSES['fff_filament']);
 
-        // Field 9: material_type (Recommended)
-        const materialType = formData.materialType.toLowerCase();
-        if (this.MATERIAL_TYPES[materialType] !== undefined) {
-            data.set(9, this.MATERIAL_TYPES[materialType]);
+        // Field 9: material_type (Recommended). "PLA-CF" is written as
+        // material_type PLA + tag contains_carbon_fiber. A type the spec has no
+        // number for (e.g. generic "PA") is left out of field 9 and stored as
+        // material_abbreviation instead, rather than as a wrong number.
+        const material = this.splitMaterial(formData.materialType);
+        const fillTag = material.suffix ? this.FILL_TAGS[material.suffix] : undefined;
+        const typeKnown = this.MATERIAL_TYPES[material.base] !== undefined &&
+            (!material.suffix || fillTag !== undefined);
+        if (typeKnown) {
+            data.set(9, this.MATERIAL_TYPES[material.base]);
         }
 
         // Field 10: material_name (Recommended)
@@ -203,6 +200,9 @@ const OpenPrintTag = {
         if (formData.coextruded) {
             tags.push(29); // Coextruded
         }
+        if (typeKnown && fillTag !== undefined) {
+            tags.push(fillTag); // e.g. contains_carbon_fiber for PLA-CF
+        }
         if (tags.length > 0) {
             data.set(28, tags);
         }
@@ -249,9 +249,12 @@ const OpenPrintTag = {
             data.set(38, bedTempMax);
         }
 
-        // Field 52: material_abbreviation (max 7 chars)
-        if (formData.materialAbbreviation) {
-            data.set(52, formData.materialAbbreviation.substring(0, 7));
+        // Field 52: material_abbreviation (max 7 chars); falls back to the
+        // material name when field 9 could not represent it
+        const abbreviation = formData.materialAbbreviation ||
+            (typeKnown ? '' : (formData.materialType || '').toUpperCase());
+        if (abbreviation) {
+            data.set(52, abbreviation.substring(0, 7));
         }
 
         // Field 55: country_of_origin (ISO 3166-1, 2 chars)
@@ -292,8 +295,12 @@ const OpenPrintTag = {
             const typeValue = decoded.get(9);
             const typeKey = Object.keys(this.MATERIAL_TYPES).find(k => this.MATERIAL_TYPES[k] === typeValue);
             if (typeKey) {
-                result.materialType = typeKey.toUpperCase();
+                const tags = Array.isArray(decoded.get(28)) ? decoded.get(28) : [];
+                const suffix = Object.keys(this.FILL_TAGS).find(k => tags.includes(this.FILL_TAGS[k]));
+                result.materialType = (suffix ? `${typeKey}-${suffix}` : typeKey).toUpperCase();
             }
+        } else if (decoded.has(52)) {
+            result.materialType = String(decoded.get(52)).toUpperCase();
         }
 
         // Material name
