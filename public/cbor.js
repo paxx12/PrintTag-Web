@@ -35,8 +35,16 @@ const CBOR = (function() {
                         chunks.push(0x18, value);
                     } else if (value < 65536) {
                         chunks.push(0x19, value >> 8, value & 0xff);
+                    } else if (value <= 0xffffffff) {
+                        chunks.push(0x1a, (value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff);
                     } else {
-                        chunks.push(0x1a, (value >> 24) & 0xff, (value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff);
+                        // JS bit operators are 32-bit: split into two words
+                        // (exact up to Number.MAX_SAFE_INTEGER, e.g. 13/14-digit GTINs)
+                        const high = Math.floor(value / 0x100000000);
+                        const low = value % 0x100000000;
+                        chunks.push(0x1b,
+                            (high >>> 24) & 0xff, (high >>> 16) & 0xff, (high >>> 8) & 0xff, high & 0xff,
+                            (low >>> 24) & 0xff, (low >>> 16) & 0xff, (low >>> 8) & 0xff, low & 0xff);
                     }
                 } else if (Number.isInteger(value) && value < 0) {
                     // Negative integer (major type 1)
@@ -179,10 +187,11 @@ const CBOR = (function() {
             } else if (additionalInfo === 25) {
                 return (readByte() << 8) | readByte();
             } else if (additionalInfo === 26) {
-                return (readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte();
+                // >>> 0: unsigned, values >= 2^31 must not turn negative
+                return ((readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte()) >>> 0;
             } else if (additionalInfo === 27) {
-                const highWord = (readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte();
-                const lowWord = (readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte();
+                const highWord = ((readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte()) >>> 0;
+                const lowWord = ((readByte() << 24) | (readByte() << 16) | (readByte() << 8) | readByte()) >>> 0;
                 return (highWord * 0x100000000) + lowWord;
             } else if (additionalInfo === 31) {
                 return -1; // Indefinite length
